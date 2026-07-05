@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
-import { ArrowLeft, RefreshCw, TrendingUp, ChevronUp, ChevronDown, Minus, Share2, X, Check, BarChart2 } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { ArrowLeft, RefreshCw, TrendingUp, ChevronUp, ChevronDown, Minus, Share2, X, Check, BarChart2, ShieldAlert, Code } from 'lucide-react';
 import type { ProjectResult, FileResult } from '@/lib/analyzer/types';
 import ScoreGauge from '@/components/analyzer/ScoreGauge';
 import AIInsight from '@/components/analyzer/AIInsight';
@@ -20,6 +22,25 @@ export default function ProjectPage() {
     const [copied, setCopied] = useState(false);
     const router = useRouter();
     const { user } = useUser();
+
+    const historyScans = useQuery(
+        api.scans.getLastTwoScansForProject,
+        user ? { userId: user.id, projectName } : 'skip'
+    );
+
+    const previousScan = useMemo(() => {
+        if (!project || !historyScans || historyScans.length === 0) return null;
+        return historyScans.find(s => s.scanId !== project.scanId) ?? null;
+    }, [historyScans, project]);
+
+    function timeAgo(ts: number) {
+        const diff = Date.now() - ts;
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.floor(hrs / 24)}d ago`;
+    }
 
     // Clear generated link when visibility changes — Summary and Full need different links
     useEffect(() => { setShareLink(null); }, [shareVisibility]);
@@ -56,6 +77,11 @@ export default function ProjectPage() {
                 topImprovements: JSON.stringify(project.topImprovements),
                 aiExplanation: project.aiExplanation ?? '',
                 visibility: 'summary',
+                architectureInsights: project.architectureInsights ? JSON.stringify(project.architectureInsights) : undefined,
+                rootCauseClusters: project.rootCauseClusters ? JSON.stringify(project.rootCauseClusters) : undefined,
+                topFixes: project.topFixes ? JSON.stringify(project.topFixes) : undefined,
+                detectedPatterns: project.detectedPatterns ? JSON.stringify(project.detectedPatterns) : undefined,
+                allIssues: project.allIssues ? JSON.stringify(project.allIssues) : undefined,
             }),
         })
             .then(async (res) => {
@@ -170,6 +196,11 @@ export default function ProjectPage() {
                 visibility: shareVisibility,
                 fileResults: shareVisibility === 'full' ? p.fileResults : undefined,
                 languageMode: 'mixed',
+                architectureInsights: p.architectureInsights ? JSON.stringify(p.architectureInsights) : undefined,
+                rootCauseClusters: p.rootCauseClusters ? JSON.stringify(p.rootCauseClusters) : undefined,
+                topFixes: p.topFixes ? JSON.stringify(p.topFixes) : undefined,
+                detectedPatterns: p.detectedPatterns ? JSON.stringify(p.detectedPatterns) : undefined,
+                allIssues: p.allIssues ? JSON.stringify(p.allIssues) : undefined,
             };
 
             const res = await fetch('/api/save-scan', {
@@ -236,30 +267,111 @@ export default function ProjectPage() {
                 </div>
             </div>
 
-            <div className="correctness-row">
-                <div className={`glass-card correctness-card ${correctnessFailedCount > 0 ? 'correctness-fail' : (correctnessUnknownCount > 0 ? 'correctness-unknown' : 'correctness-pass')}`}>
-                    <h2 className="card-title">Correctness Gate</h2>
-                    <div className="correctness-status-line">
-                        <span className="correctness-pill">
-                            {correctnessFailedCount > 0 ? 'Fail' : (correctnessUnknownCount > 0 ? 'Partially checked' : 'Pass')}
-                        </span>
-                        <span className="correctness-subtext">
-                            ZIP file-level correctness status
-                        </span>
-                    </div>
-                    <p className="correctness-warning">
-                        {correctnessFailedCount > 0
-                            ? `${correctnessFailedCount} file${correctnessFailedCount > 1 ? 's' : ''} failed syntax checks.`
-                            : 'No syntax failures found in checked files.'}
-                    </p>
-                    <p className="correctness-subtext">
-                        Coverage in this scan: {project.correctnessSummary.filesChecked} checked files, {project.correctnessSummary.filesUnchecked} unchecked.
-                    </p>
-                    <p className="correctness-subtext">
-                        Confidence: {confidencePillText}.
-                    </p>
-                </div>
-            </div>
+            {(() => {
+                const securitySmells = (project.allIssues || []).filter(i => i.issue.category === 'security');
+                const frameworkSmells = (project.allIssues || []).filter(i => i.issue.category === 'framework');
+                const deltaScore = previousScan ? project.projectScore - previousScan.projectScore : null;
+                const deltaFiles = previousScan ? project.totalFiles - previousScan.totalFiles : null;
+                const deltaLines = previousScan ? project.totalLines - previousScan.totalLines : null;
+
+                return (
+                    <>
+                        <div className="correctness-row" style={{ display: 'grid', gridTemplateColumns: previousScan ? '1fr 1fr' : '1fr', gap: '20px' }}>
+                            <div className={`glass-card correctness-card ${correctnessFailedCount > 0 ? 'correctness-fail' : (correctnessUnknownCount > 0 ? 'correctness-unknown' : 'correctness-pass')}`}>
+                                <h2 className="card-title">Correctness Gate</h2>
+                                <div className="correctness-status-line">
+                                    <span className="correctness-pill">
+                                        {correctnessFailedCount > 0 ? 'Fail' : (correctnessUnknownCount > 0 ? 'Partially checked' : 'Pass')}
+                                    </span>
+                                    <span className="correctness-subtext">
+                                        ZIP file-level correctness status
+                                    </span>
+                                </div>
+                                <p className="correctness-warning">
+                                    {correctnessFailedCount > 0
+                                        ? `${correctnessFailedCount} file${correctnessFailedCount > 1 ? 's' : ''} failed syntax checks.`
+                                        : 'No syntax failures found in checked files.'}
+                                </p>
+                                <p className="correctness-subtext">
+                                    Coverage: {project.correctnessSummary.filesChecked} checked, {project.correctnessSummary.filesUnchecked} unchecked.
+                                </p>
+                                <p className="correctness-subtext">
+                                    Confidence: {confidencePillText}.
+                                </p>
+                            </div>
+
+                            {previousScan && (
+                                <div className="glass-card correctness-card" style={{ borderLeft: '4px solid', borderLeftColor: deltaScore && deltaScore >= 0 ? '#22c55e' : '#ef4444', paddingLeft: '20px' }}>
+                                    <h2 className="card-title">📉 Scan Evolution Delta</h2>
+                                    <div className="correctness-status-line">
+                                        <span className="correctness-pill" style={{
+                                            background: deltaScore && deltaScore >= 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                            color: deltaScore && deltaScore >= 0 ? '#22c55e' : '#ef4444',
+                                            borderColor: deltaScore && deltaScore >= 0 ? '#22c55e40' : '#ef444440',
+                                            border: '1px solid',
+                                        }}>
+                                            {deltaScore && deltaScore >= 0 ? `+${deltaScore}` : deltaScore} pts
+                                        </span>
+                                        <span className="correctness-subtext" style={{ fontSize: '11px' }}>
+                                            vs scan {timeAgo(previousScan.createdAt)}
+                                        </span>
+                                    </div>
+                                    <div style={{ marginTop: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Files changed:</span>
+                                            <strong style={{ color: deltaFiles && deltaFiles >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                {deltaFiles && deltaFiles >= 0 ? `+${deltaFiles}` : deltaFiles}
+                                            </strong>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Lines of code:</span>
+                                            <strong style={{ color: deltaLines && deltaLines >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                {deltaLines && deltaLines >= 0 ? `+${deltaLines}` : deltaLines}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ── Security & Framework Smells Card ── */}
+                        {((securitySmells && securitySmells.length > 0) || (frameworkSmells && frameworkSmells.length > 0)) && (
+                            <div className="glass-card security-section" style={{ maxWidth: '1100px', margin: '20px auto 0', padding: '24px' }}>
+                                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <ShieldAlert size={18} color="#ef4444" /> Security & Framework Violations
+                                </h2>
+                                <p className="section-subtitle">Deterministic static rules flagged these critical code smells in the uploaded ZIP.</p>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginTop: '16px' }}>
+                                    {securitySmells.map((item, idx) => (
+                                        <div key={`sec-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <strong style={{ fontSize: '14px', color: '#ef4444' }}>Security Smell: {item.issue.type.replace('security_', '').toUpperCase()}</strong>
+                                                    <span className="text-muted" style={{ fontSize: '12px' }}>Line {item.issue.line} in <code style={{ background: 'var(--bg-card)', padding: '2px 6px', borderRadius: '3px' }}>{item.filePath}</code></span>
+                                                </div>
+                                                <p style={{ margin: '6px 0 0', fontSize: '13px' }}>{item.issue.message}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {frameworkSmells.map((item, idx) => (
+                                        <div key={`fw-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(59, 130, 246, 0.05)', borderLeft: '4px solid #3b82f6', borderRadius: '4px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <strong style={{ fontSize: '14px', color: '#3b82f6' }}>Framework Anti-pattern: {item.issue.type.replace('framework_', '').toUpperCase()}</strong>
+                                                    <span className="text-muted" style={{ fontSize: '12px' }}>Line {item.issue.line} in <code style={{ background: 'var(--bg-card)', padding: '2px 6px', borderRadius: '3px' }}>{item.filePath}</code></span>
+                                                </div>
+                                                <p style={{ margin: '6px 0 0', fontSize: '13px' }}>{item.issue.message}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                );
+            })()}
 
             {/* ── Ranked Top Fixes Landing Panel (Stage 2) ── */}
             {project.topFixes && project.topFixes.length > 0 && (
@@ -416,6 +528,45 @@ export default function ProjectPage() {
                                         <span className="improvement-files">{imp.affectedFiles} file{imp.affectedFiles > 1 ? 's' : ''} affected</span>
                                         <span className="improvement-gain">~+{imp.potentialGain} pts potential</span>
                                     </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Architectural Pattern Recognition ── */}
+            {project.detectedPatterns && project.detectedPatterns.length > 0 && (
+                <div className="glass-card patterns-section" style={{ maxWidth: '1100px', margin: '20px auto 0', padding: '24px' }}>
+                    <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Code size={18} color="#3b82f6" /> Detected Architectural Patterns
+                    </h2>
+                    <p className="section-subtitle">Aurelin resolved project layout and imports to detect architectural patterns with confidence scores.</p>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                        {project.detectedPatterns.map((pattern: any, idx: number) => (
+                            <div key={idx} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card-hover)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <strong style={{ fontSize: '15px' }}>{pattern.name}</strong>
+                                    <span style={{
+                                        color: pattern.confidence >= 80 ? '#22c55e' : pattern.confidence >= 60 ? '#f59e0b' : '#f87171',
+                                        background: pattern.confidence >= 80 ? 'rgba(34, 197, 94, 0.1)' : pattern.confidence >= 60 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                    }}>
+                                        {pattern.confidence}% Match
+                                    </span>
+                                </div>
+                                <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-muted)' }}>{pattern.description}</p>
+                                <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '4px', color: 'var(--text)' }}>Evidence:</div>
+                                    <ul style={{ margin: 0, paddingLeft: '16px', listStyleType: 'disc', color: 'var(--text-muted)' }}>
+                                        {pattern.evidence.map((ev: string, i: number) => (
+                                            <li key={i} style={{ marginBottom: '2px' }}>{ev}</li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         ))}

@@ -1,22 +1,24 @@
 # Aurelin 🩺
 
-> **A multi-language project health analyzer with deterministic metrics, structured AI insight, and scan evolution tracking.**
+> **An Explainable Static Analysis & Architecture Intelligence Platform.**
 >
-> Unlike purely AI-based reviewers, every recommendation is grounded in measurable code metrics and structural analysis.
+> Grounded in deterministic metrics and graph algorithms. Enhanced by AI coaching. Not another opinionated, hallucination-prone AI wrapper.
 >
-> Drop in a single file or an entire ZIP — Aurelin scores your codebase, explains why, maps its import architecture, and tracks how it improves over time.
+> Drop in a single file or an entire ZIP — Aurelin parses your codebase, maps its import architecture, scans for security/framework issues, calculates explainable health scores, and tracks improvements scan-to-scan.
 
 ---
 
 ## 🚀 Key Features
 
-*   **Explainable Maintainability Scoring**: Metric-based scoring (0-100) with clear, transparent deductions.
-*   **WASM Syntax Gates**: Secure, sandboxed WebAssembly parsers (`web-tree-sitter`) checking syntax for Python, Go, Java, C++, Rust, and C# without spawning un-sandboxed shell processes.
-*   **AST Deep Analysis**: JavaScript/TypeScript traversal checking nesting, function length, duplication, and unused imports.
-*   **Tarjan's Circular Dependency Detector**: Linear-time cycle detection locating circular module imports.
-*   **Structural Audits**: God modules and dead code detection.
+*   **Explainable Scoring & Deductions**: Metric-based maintainability scoring (0-100) with detailed average deductions per file, plus an interactive *What-If Playbook* simulating score boosts for specific refactoring actions.
+*   **Architectural Pattern Recognition**: Deterministic heuristic matching detecting MVC, Repository, Clean/Hexagonal, Event-Driven queue, Monorepos, and Next.js App Router architectures—annotated with explicit **Confidence Levels (0-100%)** and matched evidence lists.
+*   **Security Smell Detection**: Static checks scan for dynamic execution (`eval()`, `exec()`), React XSS attributes (`dangerouslySetInnerHTML`), exposed secrets/API credentials, and raw SQL injection vulnerabilities.
+*   **Next.js Framework Audit**: Special analysis checks for React App Router convention matching and Client Component rules violations (such as importing server-side drivers or Prisma clients inside `"use client"` modules).
+*   **Scan Evolution Deltas**: Instantly compares scans across a project to show files changed, lines modified, score fluctuations, and resolved circular cycles or dead code files since your last run.
+*   **Tarjan's Circular Dependency Detector**: Linear-time cycle detection locating circular imports (`A ➔ B ➔ C ➔ A`) using directed graphs.
+*   **WASM Syntax Gates**: Secure, sandboxed WebAssembly parsers (`web-tree-sitter`) checking syntax for Python, Go, Java, C++, Rust, C#, and C without spawning un-sandboxed shell processes.
+*   **AST Deep Analysis**: JavaScript/TypeScript traversal checking nesting depth, function length, code duplication, and unused imports.
 *   **Parent Directory Clustering**: Folder-based aggregation of issues, with AI-synthesized sprint plans and prioritized fixes.
-*   **Evolution Tracking**: Evolution banners and charts tracking your maintainability score scan-to-scan.
 *   **Shareable Reports**: Public reports with adjustable visibility controls.
 
 ---
@@ -26,7 +28,7 @@
 When you upload a single source file or an entire project ZIP, Aurelin processes your code through six distinct analysis stages:
 
 ```
-[Upload] ➔ [Read & Decompress] ➔ [Parse Code] ➔ [Extract Metrics] ➔ [Graph & Analyze Cycles] ➔ [Calculate Scores] ➔ [AI Explanation] ➔ [Dashboard]
+[Upload] ➔ [Decompress & Promise Pool] ➔ [Parse & Audit] ➔ [Graph & Cycles] ➔ [Scoring & Deltas] ➔ [AI Coach] ➔ [Dashboard]
 ```
 
 ### Step 1 — Read the Project
@@ -47,26 +49,30 @@ For each collected file, Aurelin chooses the appropriate parsing path based on t
 
 The parser converts the flat code text into a structured Syntax Tree representing the hierarchical grammar of the source file.
 
-### Step 3 — Extract Metrics
+### Step 3 — Extract Metrics & Audit Rules
 The syntax tree is walked to extract structural and maintainability metrics:
 - **Logical Complexity**: Counting decision branches (conditionals, loops, switches).
 - **Block Nesting Depth**: Tracking how deeply loops/conditionals are nested.
 - **Function/Module Length**: Counting lines inside functions.
-- **Imports Tracking**: Capturing imports to detect unused declarations and build the project's dependency graph.
+- **Imports Tracking**: Capturing imports to detect unused declarations and build the dependency graph.
 - **Code Duplication**: Checking code blocks using a sliding window.
+- **Security Smells**: Flagging unsafe dynamic executions, exposed keys, XSS paths, or SQL injection strings.
+- **Framework Violations**: Identifying database imports inside frontend-rendered Client Components.
 
 ### Step 4 — Build Project Intelligence
-After individual file metrics are compiled, Aurelin builds a project-level dependency graph where files represent nodes and imports represent directed edges. The analyzer:
+After individual file metrics are compiled, Aurelin builds a project-level dependency graph where files represent nodes and imports represent directed edges:
 - Resolves Next.js root aliases (`@/`) and relative import pathways.
 - Runs Tarjan's SCC algorithm on the directed graph to identify circular import loops.
 - Flag God files (excessive in/out degree coupling) and dead code modules (0 incoming references).
 - Groups issues by parent directories into folder-based directory clusters.
+- Runs a rules engine checking folder setups and dependencies to recognize architectural patterns (like MVC, Clean, or Event-Driven) with calculated confidence bounds.
 
-### Step 5 — Calculate Scores
-The maintainability score is computed by applying transparent, deterministic deductions to a starting score of 100 based on the extracted metrics (see [Scoring Engine](#-scoring-engine) below). If the syntax parser flags errors, the file fails the **Correctness Gate** and its maintainability score is capped at `60` to signal a broken build.
+### Step 5 — Calculate Scores & Deltas
+The maintainability score is computed by applying transparent, deterministic deductions to a starting score of 100 based on the extracted metrics. If the syntax parser flags errors, the file fails the **Correctness Gate** and its maintainability score is capped at `60`. 
+Aurelin queries the Convex database for the project's scan history to calculate metric deltas (Δ score, Δ lines, Δ files) and tracks resolved circular cycles or dead code files since your last scan.
 
 ### Step 6 — AI Explanation
-Finally, the project metrics, structural findings, directory clusters, and correctness gates are passed to Llama 3.3 via Groq. **The AI does not invent or hallucinate the metrics.** Instead, it acts as an architectural coach: it reviews the static metrics, explains the root causes of deductions, generates sprint plan tips for directory clusters, and prioritizes the top fixes.
+Finally, the project metrics, structural findings, security/framework violations, directory clusters, and correctness gates are passed to Llama 3.3 via Groq. **The AI does not invent or hallucinate the metrics.** Instead, it acts as an architectural coach: it reviews the static metrics, explains the root causes of deductions, generates sprint plan tips for directory clusters, and prioritizes the top fixes.
 
 ---
 
@@ -86,14 +92,14 @@ flowchart TD
     E --> G[Babel AST Traversal]
     F --> H[WASM Syntax & Text Engine]
     
-    G --> I[Metrics Extractor]
+    G --> I[Metrics, Security, & Next.js Audit]
     H --> I
     
     I --> J[Maintainability Scorer]
     J --> K[Dependency Resolver & Tarjan Cycles]
-    K --> L[Directory Clustered Aggregator]
-    L --> M[Groq AI Sprint Generator]
-    M --> N[Aggregated Project Result]
+    K --> L[Architecture Patterns & Confidence Engine]
+    L --> M[Directory Clustered Aggregator]
+    M --> N[Groq AI Sprint Generator]
     N --> O[(Convex Database)]
     N --> P[Dashboard UI]
 ```
@@ -145,15 +151,26 @@ Aurelin operates in two analysis modes depending on the language:
 
 ### 1. 🔬 Deep Mode (JavaScript / TypeScript)
 For JavaScript and TypeScript files, Aurelin performs deep static analysis:
-- **Babel AST Traversal**: Generates a full Abstract Syntax Tree.
-- **Nesting Metrics**: Recursively walks loop structures (`ForStatement`, `WhileStatement`, `DoWhileStatement`) and conditional statements (`IfStatement`, `SwitchStatement`) to measure nesting depth.
-- **Unused Import Identification**: Traverses `ImportSpecifier` bindings and checks if they are referenced anywhere in the module's scope, including JSX component declarations.
+*   **Babel AST Traversal**: Generates a full Abstract Syntax Tree.
+*   **Nesting Metrics**: Recursively walks loop structures (`ForStatement`, `WhileStatement`, `DoWhileStatement`) and conditional statements (`IfStatement`, `SwitchStatement`) to measure nesting depth.
+*   **Unused Import Identification**: Traverses `ImportSpecifier` bindings and checks if they are referenced anywhere in the module's scope, including JSX component declarations.
 
 ### 2. ⚡ Quick Mode (Python, Go, Java, C++, Rust, C#)
 For other backend languages, Aurelin uses a hybrid WebAssembly parser:
-- **WASM Syntax Gates**: Dynamically loads compiled language grammars (`tree-sitter-python.wasm`, `tree-sitter-go.wasm`, etc.) via `web-tree-sitter` in a secure sandbox.
-- **Syntax Error Tracing**: Traverses the syntax tree for `ERROR` nodes and `isMissing()` tokens to capture exact syntax error messages, line numbers, and column offsets.
-- **Regex Metric Extraction**: Identifies function boundaries, parameters, nesting blocks, and line metrics using language-specific regular expressions when full ASTs are unavailable.
+*   **WASM Syntax Gates**: Dynamically loads compiled language grammars (`tree-sitter-python.wasm`, `tree-sitter-go.wasm`, etc.) via `web-tree-sitter` in a secure sandbox.
+*   **Syntax Error Tracing**: Traverses the syntax tree for `ERROR` nodes and `isMissing()` tokens to capture exact syntax error messages, line numbers, and column offsets.
+*   **Regex Metric Extraction**: Identifies function boundaries, parameters, nesting blocks, and line metrics using language-specific regular expressions when full ASTs are unavailable.
+
+### 3. 🔒 Security Analysis Gate
+Aurelin performs static security scans on all files:
+*   **Unsafe Execution**: Flags functions like JavaScript `eval()` or Python `eval()` / `exec()` that process user strings dynamically.
+*   **Credential Exposure**: Checks variable declarations against token signatures to locate hardcoded Slack API keys, private passwords, and JWT secret constants.
+*   **SQL Injection**: Evaluates DB query parameters to detect raw string concatenations or unescaped templates within database operations (e.g. `db.query("SELECT ... WHERE id = " + id)`).
+
+### 4. ⚡ Next.js Framework Audit
+If a Next.js environment is detected, Aurelin runs specialized checks:
+*   **Frontend/Backend Boundaries**: Inspects Client Components (marked by `"use client"`) and flags direct server-side driver imports like `@prisma/client`, `convex/server`, `pg`, or `mongoose`.
+*   **App Router Matching**: Recognizes file-based conventions (`layout.tsx`, `page.tsx`, `route.ts`) to identify structure layouts.
 
 ---
 
@@ -185,52 +202,56 @@ def process_data(a, b, c, d, e, f, g):  # ❌ Too many parameters (7)
 ```
 
 #### Aurelin Scorecard:
-- **Correctness Gate**: `Pass` (Valid Python syntax).
-- **Extracted Metrics**: Nesting Depth: `5`, Parameter Count: `7`.
-- **Deductions Applied**:
-  - Nesting Depth Penalty: `-20 pts` (Max nesting capped at threshold).
-  - Complexity Penalty: `-15 pts` (Complexity paths from nested statements).
-- **Final Maintainability Score**: **65 / 100** (Grade: **Fair**).
-- **AI Recommendation**: *"Flatten conditional nesting in `process_data`. Extract the inner loop logic into a helper function and consolidate the 7 parameters into a configuration object."*
+*   **Correctness Gate**: `Pass` (Valid Python syntax).
+*   **Extracted Metrics**: Nesting Depth: `5`, Parameter Count: `7`.
+*   **Deductions Applied**:
+    *   Nesting Depth Penalty: `-20 pts` (Max nesting capped at threshold).
+    *   Complexity Penalty: `-15 pts` (Complexity paths from nested statements).
+*   **Final Maintainability Score**: **65 / 100** (Grade: **Fair**).
+*   **AI Recommendation**: *"Flatten conditional nesting in `process_data`. Extract the inner loop logic into a helper function and consolidate the 7 parameters into a configuration object."*
 
 ---
 
-## 🔬 Structural Analysis ("Why It Matters")
-
-Aurelin incorporates two structural algorithms designed for high-performance codebase analysis:
+## 🔬 Structural Analysis & Algorithms
 
 ### 1. Tarjan's Strongly Connected Components (SCC)
-- **What it is**: A graph algorithm that finds circular subgraphs in a single depth-first search (DFS) pass.
-- **Why it matters**: Circular dependencies (`A ➔ B ➔ A`) tightly couple modules, making them brittle, hard to test, and difficult to refactor. Aurelin runs Tarjan's algorithm to identify these cycles in linear time **$O(V + E)$**, mapping loops on your dashboard without blocking the API handler.
+*   **What it is**: A graph algorithm that finds circular subgraphs in a single depth-first search (DFS) pass.
+*   **Why it matters**: Circular dependencies (`A ➔ B ➔ A`) tightly couple modules, making them brittle, hard to test, and difficult to refactor. Aurelin runs Tarjan's algorithm to identify these cycles in linear time **$O(V + E)$**, mapping loops on your dashboard without blocking the API handler.
 
 ### 2. Promise Pool Concurrency Limiter
-- **What it is**: A custom promise pool that limits active file analysis operations.
-- **Why it matters**: Analyzing large project uploads synchronous-style blocks the single-threaded Node.js event loop. Using unrestricted `Promise.all` can crash Vercel serverless containers due to CPU spikes or out-of-memory issues. Aurelin uses a **concurrency limit of 6** to process files in parallel, keeping memory usage low and response times fast.
+*   **What it is**: A custom promise pool that limits active file analysis operations.
+*   **Why it matters**: Analyzing large project uploads synchronous-style blocks the single-threaded Node.js event loop. Using unrestricted `Promise.all` can crash Vercel serverless containers due to CPU spikes or out-of-memory issues. Aurelin uses a **concurrency limit of 6** to process files in parallel, keeping memory usage low and response times fast.
 
----
-
-## 🤖 AI Pipeline: Why Not Just Use AI?
-
-AI code reviewers often suffer from hallucinations and inconsistent metrics. Aurelin solves this by using a hybrid **Metrics-First** architecture:
-
-```
-[Traditional AI Reviewer] ➔ Raw Code ➔ Pure LLM Interpretation ➔ Opinion-Based Feedback (Unstable)
-
-[Aurelin Pipeline]     ➔ Raw Code ➔ Static WASM AST ➔ Deterministic Evidence ➔ LLM Explanation (Stable)
-```
-
-| Aspect | Traditional AI Reviewer | Aurelin |
-| :--- | :--- | :--- |
-| **Consistency** | Low (scores change query-to-query) | High (scores are deterministic) |
-| **Refactoring Source** | Guessed by AI | Grounded in metrics (duplication, cyclomatic complexity) |
-| **Performance** | High latency (needs multiple LLM hops) | Fast (static metrics run locally; AI only synthesizes results) |
-| **Security** | Sends raw code to external LLM | Sends only metadata/metrics and issue snippets |
+### 3. Heuristic Architecture Recognizer
+*   **What it is**: An evidence-first design engine inspecting directory trees, filenames, and import patterns:
+    *   **MVC**: Matches `/controllers/`, `/models/`, and `/views/`. (Confidence: 35-95%).
+    *   **Repository**: Matches `*Repository.*` file names and dependencies like `prisma`, `pg`, `sequelize`. (Confidence: 60-95%).
+    *   **Clean/Hexagonal**: Matches `/entities/`, `/usecases/`, `/adapters/`, or `/ports/`. (Confidence: 50-95%).
+    *   **Event-Driven Broker**: Matches queue folders and dependencies like `bullmq`, `amqplib`, `kafkajs`. (Confidence: 60-95%).
+    *   **Monorepo**: Identifies multiple nested manifests (`package.json`). (Confidence: 90%).
 
 ---
 
 ## 📂 Project Structure
 
-*(Refer to the [Project Structure](#project-structure) section above.)*
+```
+aurelin/
+├── app/                  # Next.js App Router (Pages, Dashboard, Scan Share Viewer)
+├── components/           # UI Components (Gauge Meters, Mermaid Graphs, AI Panels)
+├── convex/               # Convex Database (Schemas, Scans mutations, Delta Queries)
+├── lib/
+│   ├── ai/               # AI Provider Wrappers (Groq API, Sprint Generators)
+│   ├── db/               # Database client interfaces
+│   └── analyzer/         # Core static analysis engine
+│       ├── aggregate.ts  # Rules engine, Tarjan SCC, Architecture recognition
+│       ├── metrics.ts    # JS/TS AST parsing, Security checks, Next.js audits
+│       ├── scorer.ts     # Deterministic deductions calculator
+│       ├── textAnalyzer.ts # Regex-based fallbacks for quick languages
+│       ├── syntaxCheck.ts# WebAssembly syntax validator loader
+│       └── types.ts      # TypeScript interfaces
+├── test-fixtures/        # Testing fixtures (Security flaws, React violations)
+└── scripts/              # Helper copy-wasm and test-runner scripts
+```
 
 ---
 
@@ -262,6 +283,9 @@ BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
 # Push Convex schema
 npx convex dev --once
 
+# Run static analysis rules tests
+npx tsx scripts/test-static-gates.ts
+
 # Start development server
 npm run dev
 ```
@@ -272,28 +296,29 @@ Open `http://localhost:3000` to view the platform.
 ## 📊 Self-Analysis Benchmark
 
 To validate the analyzer's accuracy, Aurelin scanned its own `lib/` folder:
-- **97/100 — Excellent** overall maintainability score.
-- Correctly identified [metrics.ts](file:///Users/srinivasch/Documents/Projects/Aurelin/ai-project/lib/analyzer/metrics.ts) as the weakest file (**83/100**) due to a highly nested 17-path cyclomatic complexity routine.
-- Correctly identified [aggregate.ts](file:///Users/srinivasch/Documents/Projects/Aurelin/ai-project/lib/analyzer/aggregate.ts) as a God file candidate due to high import-coupling.
+*   **97/100 — Excellent** overall maintainability score.
+*   Correctly identified [metrics.ts](file:///Users/srinivasch/Documents/Projects/Aurelin/ai-project/lib/analyzer/metrics.ts) as the weakest file (**83/100**) due to a highly nested 17-path cyclomatic complexity routine.
+*   Correctly identified [aggregate.ts](file:///Users/srinivasch/Documents/Projects/Aurelin/ai-project/lib/aggregate.ts) as a God file candidate due to high import-coupling.
 
 ---
 
 ## 🧠 Design Decisions
 
-- **Why static metrics first?** Grounding recommendations in concrete, AST-derived numbers builds developer trust and guarantees reproducible grades.
-- **Why no AST parsing for non-JS/TS files?** Building and maintaining full compiler ASTs for Python, C++, Go, and Rust would expand the scope and increase latency. WebAssembly Tree-sitter grammars provide syntax checks and structural complexity metrics with minimal overhead.
-- **Why use Convex for history?** Real-time mutations allow users to see their project score improve scan-to-scan instantly without page reloads.
+*   **Why static metrics first?** Grounding recommendations in concrete, AST-derived numbers builds developer trust and guarantees reproducible grades.
+*   **Why use WebAssembly?** Running sandboxed WASM syntax checkers for Python, Go, and Rust allows checking syntax without spawning shell commands or installing compilers in the serverless backend.
+*   **Why use Convex for history?** Real-time mutations allow users to see their project score improve scan-to-scan instantly without page reloads.
+*   **Why skip GitHub Cloning/OAuth?** Bypassing GitHub APIs prevents placement discussions from shifting to basic OAuth token storage or server side rate-limits, keeping interview focus entirely on static analysis engines and graph algorithms.
 
 ---
 
 ## 🗺️ Roadmap
 
-- **Phase 1: AST Parser & Deductions Engine** (COMPLETE)
-- **Phase 2: Multi-Language ZIP Uploads & Resource Fork Filters** (COMPLETE)
-- **Phase 3: Convex History, Dashboard Trends, & Shareable Reports** (COMPLETE)
-- **Phase 4: WebAssembly Syntax Checking Gates & Promise Pooling** (COMPLETE)
-- **Phase 5: GitHub Repository URL Cloning & Delta Analysis** (PLANNED)
-- **Phase 6: VS Code Extension Inline Metrics Sidebar** (PLANNED)
+*   **Phase 1: AST Parser & Deductions Engine** (COMPLETE)
+*   **Phase 2: Multi-Language ZIP Uploads & Resource Fork Filters** (COMPLETE)
+*   **Phase 3: Convex History, Dashboard Trends, & Shareable Reports** (COMPLETE)
+*   **Phase 4: WebAssembly Syntax Checking Gates & Promise Pooling** (COMPLETE)
+*   **Phase 5: Heuristic Architecture Recognition, Security Rules, Next.js Audit, & Comparative Scan Diffs** (COMPLETE)
+*   **Phase 6: VS Code Extension Inline Metrics Sidebar** (PLANNED)
 
 ---
 

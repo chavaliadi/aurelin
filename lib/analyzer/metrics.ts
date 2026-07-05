@@ -2,6 +2,7 @@ import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import type { File } from '@babel/types';
 import type { Issue, MetricsSummary, IssueType, Severity, Priority } from './types';
+import path from 'node:path';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -272,6 +273,117 @@ function detectUnusedImports(ast: t.File): string[] {
     return Array.from(imported.keys()).filter((name) => !usedIdentifiers.has(name));
 }
 
+function detectASTSecuritySmells(ast: t.File, code: string): Issue[] {
+    const issues: Issue[] = [];
+    
+    // 1. eval() and dangerouslySetInnerHTML usage
+    traverse(ast, {
+        CallExpression(path: any) {
+            const node = path.node;
+            if (t.isIdentifier(node.callee) && node.callee.name === 'eval') {
+                issues.push({
+                    type: 'security_eval',
+                    category: 'security',
+                    severity: 'high',
+                    priority: 'structural',
+                    message: 'Unsafe eval() usage detected. This can lead to Remote Code Execution (RCE) vulnerabilities.',
+                    line: node.loc?.start.line ?? 0,
+                    confidence: 100,
+                    method: 'AST',
+                });
+            }
+        },
+        JSXAttribute(path: any) {
+            const node = path.node;
+            if (node.name.name === 'dangerouslySetInnerHTML') {
+                issues.push({
+                    type: 'security_xss',
+                    category: 'security',
+                    severity: 'high',
+                    priority: 'quick-win',
+                    message: 'dangerouslySetInnerHTML attribute detected. Ensure user-supplied data is fully sanitized to prevent XSS.',
+                    line: node.loc?.start.line ?? 0,
+                    confidence: 100,
+                    method: 'AST',
+                });
+            }
+        }
+    });
+
+    // 2. Secret exposure (regex on code text)
+    const secretRegex = /\b(?:api_?key|secret|token|password|credential|jwt_?secret)\b\s*=\s*['"`]([a-zA-Z0-9_\-\.\/=]{8,})['"`]/gi;
+    let match;
+    while ((match = secretRegex.exec(code)) !== null) {
+        const value = match[1];
+        if (['true', 'false', 'null', 'undefined', 'api_key', 'secret', 'token'].includes(value.toLowerCase())) continue;
+        
+        const line = code.slice(0, match.index).split('\n').length;
+        issues.push({
+            type: 'security_secrets',
+            category: 'security',
+            severity: 'high',
+            priority: 'quick-win',
+            message: 'Potential hardcoded secret or API key exposed in source code.',
+            line,
+            confidence: 90,
+            method: 'Regex',
+        });
+    }
+
+    // 3. SQL injection pattern
+    const sqlRegex = /\b(?:select|insert|update|delete|create|drop)\b.*?\$\{[a-zA-Z0-9_]+\}/gi;
+    while ((match = sqlRegex.exec(code)) !== null) {
+        const line = code.slice(0, match.index).split('\n').length;
+        issues.push({
+            type: 'security_sql',
+            category: 'security',
+            severity: 'high',
+            priority: 'structural',
+            message: 'Potential SQL Injection: variable interpolation detected inside database query string.',
+            line,
+            confidence: 85,
+            method: 'Regex',
+        });
+    }
+
+    return issues;
+}
+
+function detectNextjsSmells(ast: t.File, code: string, filePath: string): Issue[] {
+    const issues: Issue[] = [];
+    const isClient = code.includes('use client') || code.includes("'use client'") || code.includes('"use client"');
+    
+    if (isClient) {
+        traverse(ast, {
+            ImportDeclaration(path: any) {
+                const source = path.node.source.value;
+                if (
+                    source.includes('@prisma/client') || 
+                    source.includes('convex/server') || 
+                    source.includes('pg') || 
+                    source.includes('pg-pool') || 
+                    source.includes('sequelize') ||
+                    source.includes('mongoose') ||
+                    source.includes('mysql2')
+                ) {
+                    issues.push({
+                        type: 'framework_misplaced_client',
+                        category: 'framework',
+                        severity: 'high',
+                        priority: 'structural',
+                        message: `Next.js Client Component imports a database client/driver ("${source}"). Database queries must run in Server Components or Server Actions.`,
+                        line: path.node.loc?.start.line ?? 1,
+                        confidence: 95,
+                        method: 'AST',
+                    });
+                }
+            }
+        });
+    }
+    
+    return issues;
+}
+
 // ─── main export ─────────────────────────────────────────────────────────────
 
 export interface RawMetrics {
@@ -280,8 +392,17 @@ export interface RawMetrics {
     imports: string[];
 }
 
-export function computeMetrics(ast: t.File, code: string): RawMetrics {
+export function computeMetrics(ast: t.File, code: string, filePath: string = 'file.ts'): RawMetrics {
     const issues: Issue[] = [];
+    
+    // ── security smells ──
+    const securityIssues = detectASTSecuritySmells(ast, code);
+    issues.push(...securityIssues);
+
+    // ── framework smells ──
+    const frameworkIssues = detectNextjsSmells(ast, code, filePath);
+    issues.push(...frameworkIssues);
+
     const functionComplexities: number[] = [];
     const functionLengths: number[] = [];
     const imports: string[] = [];

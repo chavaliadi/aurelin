@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
             architectureInsights,
             rootCauseClusters,
             topFixes,
+            detectedPatterns,
+            allIssues,
         } = body;
 
         if (!projectScore || !categoryScores) {
@@ -53,6 +55,12 @@ export async function POST(req: NextRequest) {
             topFixes: typeof topFixes === 'string'
                 ? topFixes
                 : (topFixes ? JSON.stringify(topFixes) : undefined),
+            detectedPatterns: typeof detectedPatterns === 'string'
+                ? detectedPatterns
+                : (detectedPatterns ? JSON.stringify(detectedPatterns) : undefined),
+            allIssues: typeof allIssues === 'string'
+                ? allIssues
+                : (allIssues ? JSON.stringify(allIssues) : undefined),
         });
 
         return NextResponse.json({ scanId });

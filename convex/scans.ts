@@ -27,12 +27,47 @@ export const saveScan = mutation({
         architectureInsights: v.optional(v.string()),
         rootCauseClusters: v.optional(v.string()),
         topFixes: v.optional(v.string()),
+        detectedPatterns: v.optional(v.string()),
+        allIssues: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("ScansTable", {
             ...args,
             createdAt: Date.now(),
         });
+    },
+});
+
+// ─── Get last two scans for a project (for delta) ───────────────────────────
+
+export const getLastTwoScansForProject = query({
+    args: { userId: v.string(), projectName: v.string() },
+    handler: async (ctx, args) => {
+        const scans = await ctx.db
+            .query("ScansTable")
+            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+            .order("desc")
+            .collect();
+
+        const projectScans = scans.filter((s) => s.projectName === args.projectName);
+
+        return projectScans.slice(0, 2).map((s) => ({
+            scanId: s.scanId,
+            projectName: s.projectName,
+            projectScore: s.projectScore,
+            grade: s.grade,
+            categoryScores: s.categoryScores,
+            totalFiles: s.totalFiles,
+            totalLines: s.totalLines,
+            totalFunctions: s.totalFunctions,
+            topImprovements: s.topImprovements,
+            aiSummary: s.aiSummary,
+            createdAt: s.createdAt,
+            architectureInsights: s.architectureInsights,
+            detectedPatterns: s.detectedPatterns,
+            rootCauseClusters: s.rootCauseClusters,
+            topFixes: s.topFixes,
+        }));
     },
 });
 
@@ -117,6 +152,8 @@ export const getScanById = query({
             architectureInsights: results.architectureInsights,
             rootCauseClusters: results.rootCauseClusters,
             topFixes: results.topFixes,
+            detectedPatterns: results.detectedPatterns,
+            allIssues: results.allIssues,
         };
 
         // Only include file results if visibility is "full"

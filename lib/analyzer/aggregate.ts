@@ -120,11 +120,141 @@ function isEntryPoint(filePath: string): boolean {
     return false;
 }
 
+function detectArchitecturePatterns(fileResults: FileResult[], dependencies: string[]): RecognizedPattern[] {
+    const patterns: RecognizedPattern[] = [];
+    const allPaths = fileResults.map(f => f.filePath.toLowerCase());
+    const allDeps = new Set(dependencies.map(d => d.toLowerCase()));
+
+    // 1. Model-View-Controller (MVC)
+    const hasControllers = allPaths.some(p => p.includes('/controllers/') || p.includes('/controller/'));
+    const hasModels = allPaths.some(p => p.includes('/models/') || p.includes('/model/'));
+    const hasViews = allPaths.some(p => p.includes('/views/') || p.includes('/view/'));
+    
+    if (hasControllers || hasModels || hasViews) {
+        const evidence: string[] = [];
+        let score = 0;
+        if (hasControllers) { evidence.push('Detected `/controllers` directory containing controller logic.'); score += 35; }
+        if (hasModels) { evidence.push('Detected `/models` directory containing data schema definitions.'); score += 35; }
+        if (hasViews) { evidence.push('Detected `/views` or UI templates directory.'); score += 25; }
+        
+        patterns.push({
+            name: 'Model-View-Controller (MVC)',
+            confidence: score,
+            evidence,
+            description: 'Separates application concerns into data schemas (Models), interface layers (Views), and routing orchestrators (Controllers).'
+        });
+    }
+
+    // 2. Repository Pattern
+    const repositoryFiles = allPaths.filter(p => p.includes('repository.') || p.includes('repositories/'));
+    const dbDrivers = ['prisma', '@prisma/client', 'sequelize', 'mongoose', 'pg', 'mysql2', 'sqlite3', 'typeorm', 'convex'];
+    const hasDbDrivers = dbDrivers.some(d => allDeps.has(d));
+    
+    if (repositoryFiles.length > 0 || hasDbDrivers) {
+        const evidence: string[] = [];
+        let score = 0;
+        if (repositoryFiles.length > 0) {
+            evidence.push(`Found ${repositoryFiles.length} repository file(s) (e.g. \`${repositoryFiles[0]}\`).`);
+            score += 60;
+        }
+        if (hasDbDrivers) {
+            const foundDriver = dbDrivers.find(d => allDeps.has(d))!;
+            evidence.push(`Database adapter dependency \`${foundDriver}\` is active.`);
+            score += 35;
+        }
+        
+        if (score >= 40) {
+            patterns.push({
+                name: 'Repository Pattern',
+                confidence: score,
+                evidence,
+                description: 'Mediates between domain/business layers and data mapping layers using clean data querying interfaces.'
+            });
+        }
+    }
+
+    // 3. Clean / Hexagonal Architecture
+    const hasUsecases = allPaths.some(p => p.includes('/usecases/') || p.includes('/usecase/') || p.includes('/interactors/'));
+    const hasEntities = allPaths.some(p => p.includes('/entities/') || p.includes('/entity/') || p.includes('/domain/'));
+    const hasAdapters = allPaths.some(p => p.includes('/adapters/') || p.includes('/adapter/') || p.includes('/ports/'));
+    
+    if (hasUsecases || hasEntities || hasAdapters) {
+        const evidence: string[] = [];
+        let score = 0;
+        if (hasEntities) { evidence.push('Core business models / entities directory detected.'); score += 40; }
+        if (hasUsecases) { evidence.push('Application use case/interactor boundaries detected.'); score += 35; }
+        if (hasAdapters) { evidence.push('Infrastructure ports/adapters mapping layers detected.'); score += 20; }
+        
+        patterns.push({
+            name: 'Clean / Hexagonal Architecture',
+            confidence: score,
+            evidence,
+            description: 'Isolates core business rules from external frameworks, databases, and UI components using ports and adapters.'
+        });
+    }
+
+    // 4. Next.js App Router (Framework)
+    const hasAppRouter = allPaths.some(p => p.includes('app/layout.tsx') || p.includes('app/page.tsx') || p.includes('app/route.ts'));
+    if (hasAppRouter) {
+        patterns.push({
+            name: 'Next.js App Router',
+            confidence: 100,
+            evidence: [
+                'Detected `/app` folder with layout.tsx or page.tsx routing.',
+                allDeps.has('next') ? 'Next.js project dependency confirmed in package.json.' : 'Next.js file convention match.'
+            ],
+            description: 'Next-generation React framework utilizing App Router structures, loading templates, and Server-first components.'
+        });
+    }
+
+    // 5. Event-Driven Broker / Queue
+    const hasQueueDeps = ['amqplib', 'bullmq', 'kafkajs', 'mqtt', 'rhea', 'redis'].some(d => allDeps.has(d));
+    const hasQueueDirs = allPaths.some(p => p.includes('/queues/') || p.includes('/queue/') || p.includes('/events/') || p.includes('/subscribers/'));
+    
+    if (hasQueueDeps || hasQueueDirs) {
+        const evidence: string[] = [];
+        let score = 0;
+        if (hasQueueDeps) {
+            const dep = ['amqplib', 'bullmq', 'kafkajs', 'mqtt', 'redis'].find(d => allDeps.has(d))!;
+            evidence.push(`Messaging broker dependency \`${dep}\` configured.`);
+            score += 60;
+        }
+        if (hasQueueDirs) {
+            evidence.push('Discovered dedicated event queue or background subscriber folders.');
+            score += 35;
+        }
+        
+        patterns.push({
+            name: 'Event-Driven Queue Architecture',
+            confidence: score,
+            evidence,
+            description: 'Decouples service actions using asynchronous queue/message brokers for high-throughput task processing.'
+        });
+    }
+
+    // 6. Microservices structure
+    const packageJsons = allPaths.filter(p => p !== 'package.json' && p.endsWith('package.json'));
+    if (packageJsons.length >= 2) {
+        patterns.push({
+            name: 'Monorepo / Multi-Service Layout',
+            confidence: 90,
+            evidence: [
+                `Found ${packageJsons.length} separate nested project manifests (package.json).`,
+                `Sub-service entry points: ${packageJsons.slice(0, 3).map(p => `\`${p}\``).join(', ')}.`
+            ],
+            description: 'Divides the application architecture into multiple independently deployable components or monorepo workspaces.'
+        });
+    }
+
+    return patterns;
+}
+
 // ─── Main Aggregator ────────────────────────────────────────────────────────
 export function aggregateResults(
     fileResults: FileResult[],
     aiExplanation: string,
-    allIssues: { filePath: string; issue: Issue }[] = []
+    allIssues: { filePath: string; issue: Issue }[] = [],
+    dependencies: string[] = []
 ): ProjectResult {
     if (fileResults.length === 0) {
         return {
@@ -237,11 +367,13 @@ export function aggregateResults(
     });
     const mermaidGraph = mermaidLines.length > 1 ? mermaidLines.join('\n') : 'graph TD\n    empty["No coupled imports found"]';
 
+    const detectedPatterns = detectArchitecturePatterns(fileResults, dependencies);
     const architectureInsights: ArchitectureInsights = {
         mermaidGraph,
         cycles,
         deadCode,
         godFiles,
+        patterns: detectedPatterns,
     };
 
     // ── Root Cause Clustering ────────────────────────────────────────────
@@ -411,5 +543,7 @@ export function aggregateResults(
         architectureInsights,
         rootCauseClusters,
         topFixes: topFixes.slice(0, 5),
+        detectedPatterns,
+        allIssues,
     };
 }

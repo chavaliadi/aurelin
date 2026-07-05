@@ -185,6 +185,70 @@ function detectConditionChains(code: string): number {
     return (code.match(pattern) ?? []).length;
 }
 
+function detectTextSecuritySmells(code: string, language?: string): Issue[] {
+    const issues: Issue[] = [];
+    const lang = language?.toLowerCase();
+    
+    // 1. eval / dynamic execution
+    let evalRegex = /\beval\s*\(/g;
+    let match;
+    
+    if (lang === 'py' || lang === 'python') {
+        evalRegex = /\b(eval|exec)\s*\(/g;
+    }
+    
+    while ((match = evalRegex.exec(code)) !== null) {
+        const line = code.slice(0, match.index).split('\n').length;
+        issues.push({
+            type: 'security_eval',
+            category: 'security',
+            severity: 'high',
+            priority: 'structural',
+            message: `Potential unsafe dynamic execution (${lang === 'py' || lang === 'python' ? 'eval/exec' : 'eval'}) detected.`,
+            line,
+            confidence: 90,
+            method: 'Text + regex',
+        });
+    }
+
+    // 2. Secret exposure
+    const secretRegex = /\b(?:api_?key|secret|token|password|credential|jwt_?secret)\b\s*=\s*['"`]([a-zA-Z0-9_\-\.\/=]{8,})['"`]/gi;
+    while ((match = secretRegex.exec(code)) !== null) {
+        const value = match[1];
+        if (['true', 'false', 'null', 'undefined', 'api_key', 'secret', 'token'].includes(value.toLowerCase())) continue;
+        
+        const line = code.slice(0, match.index).split('\n').length;
+        issues.push({
+            type: 'security_secrets',
+            category: 'security',
+            severity: 'high',
+            priority: 'quick-win',
+            message: 'Potential hardcoded secret or API key exposed in source code.',
+            line,
+            confidence: 80,
+            method: 'Text + regex',
+        });
+    }
+
+    // 3. SQL injection pattern
+    const sqlRegex = /\b(?:select|insert|update|delete)\b.*?\+.*?\b/gi;
+    while ((match = sqlRegex.exec(code)) !== null) {
+        const line = code.slice(0, match.index).split('\n').length;
+        issues.push({
+            type: 'security_sql',
+            category: 'security',
+            severity: 'high',
+            priority: 'structural',
+            message: 'Potential SQL Injection: raw string concatenation or interpolation in SQL command.',
+            line,
+            confidence: 70,
+            method: 'Text + regex',
+        });
+    }
+
+    return issues;
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export async function analyzeText(code: string, language?: string): Promise<Omit<AnalysisResult, 'aiExplanation'>> {
@@ -221,6 +285,10 @@ export async function analyzeText(code: string, language?: string): Promise<Omit
 
     // Issues
     const issues: Issue[] = [];
+
+    // ── security smells ──
+    const securityIssues = detectTextSecuritySmells(code, language);
+    issues.push(...securityIssues);
 
     if (nestingDepth >= 4) {
         const severity: Severity = nestingDepth >= 6 ? 'high' : 'medium';

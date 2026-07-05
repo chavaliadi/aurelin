@@ -4,7 +4,7 @@ import { use } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, TrendingUp } from 'lucide-react';
+import { ArrowLeft, TrendingUp, ShieldAlert, Code } from 'lucide-react';
 import ScoreGauge from '@/components/analyzer/ScoreGauge';
 import ThemeToggle from '@/components/ThemeToggle';
 import Mermaid from '@/components/analyzer/Mermaid';
@@ -29,6 +29,8 @@ type ScanData = {
     architectureInsights?: string;
     rootCauseClusters?: string;
     topFixes?: string;
+    detectedPatterns?: string;
+    allIssues?: string;
 };
 
 function barColor(v: number) {
@@ -77,6 +79,12 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
     const architectureInsights = scan.architectureInsights ? JSON.parse(scan.architectureInsights) : null;
     const rootCauseClusters = scan.rootCauseClusters ? JSON.parse(scan.rootCauseClusters) : [];
     const topFixes = scan.topFixes ? JSON.parse(scan.topFixes) : [];
+    const detectedPatterns = scan.detectedPatterns ? JSON.parse(scan.detectedPatterns) : [];
+    const allIssues = scan.allIssues ? JSON.parse(scan.allIssues) : [];
+
+    const securitySmells = allIssues.filter((i: any) => i.issue.category === 'security');
+    const frameworkSmells = allIssues.filter((i: any) => i.issue.category === 'framework');
+
     const scanDate = new Date(scan.createdAt).toLocaleDateString('en-US', {
         year: 'numeric', month: 'short', day: 'numeric'
     });
@@ -144,6 +152,42 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
                     <span className="pill pill-clean">{scan.languageMode} mode</span>
                 </div>
             </div>
+
+            {/* ── Security & Framework Smells Card ── */}
+            {((securitySmells && securitySmells.length > 0) || (frameworkSmells && frameworkSmells.length > 0)) && (
+                <div className="glass-card security-section" style={{ maxWidth: '1100px', margin: '20px auto 0', padding: '24px' }}>
+                    <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ShieldAlert size={18} color="#ef4444" /> Security & Framework Violations
+                    </h2>
+                    <p className="section-subtitle">Deterministic static rules flagged these critical code smells in the shared ZIP.</p>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginTop: '16px' }}>
+                        {securitySmells.map((item: any, idx: number) => (
+                            <div key={`sec-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <strong style={{ fontSize: '14px', color: '#ef4444' }}>Security Smell: {item.issue.type.replace('security_', '').toUpperCase()}</strong>
+                                        <span className="text-muted" style={{ fontSize: '12px' }}>Line {item.issue.line} in <code style={{ background: 'var(--bg-card)', padding: '2px 6px', borderRadius: '3px' }}>{item.filePath}</code></span>
+                                    </div>
+                                    <p style={{ margin: '6px 0 0', fontSize: '13px' }}>{item.issue.message}</p>
+                                </div>
+                            </div>
+                        ))}
+
+                        {frameworkSmells.map((item: any, idx: number) => (
+                            <div key={`fw-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(59, 130, 246, 0.05)', borderLeft: '4px solid #3b82f6', borderRadius: '4px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <strong style={{ fontSize: '14px', color: '#3b82f6' }}>Framework Anti-pattern: {item.issue.type.replace('framework_', '').toUpperCase()}</strong>
+                                        <span className="text-muted" style={{ fontSize: '12px' }}>Line {item.issue.line} in <code style={{ background: 'var(--bg-card)', padding: '2px 6px', borderRadius: '3px' }}>{item.filePath}</code></span>
+                                    </div>
+                                    <p style={{ margin: '6px 0 0', fontSize: '13px' }}>{item.issue.message}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Prioritized Refactoring Plan (only if visibility === 'full') */}
             {scan.visibility === 'full' && topFixes && topFixes.length > 0 && (
@@ -247,6 +291,45 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
                                         <span className="improvement-files">{imp.affectedFiles} file{imp.affectedFiles > 1 ? 's' : ''} affected</span>
                                         <span className="improvement-gain">~+{imp.potentialGain} pts potential</span>
                                     </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Architectural Pattern Recognition ── */}
+            {detectedPatterns && detectedPatterns.length > 0 && (
+                <div className="glass-card patterns-section" style={{ maxWidth: '1100px', margin: '20px auto 0', padding: '24px' }}>
+                    <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Code size={18} color="#3b82f6" /> Detected Architectural Patterns
+                    </h2>
+                    <p className="section-subtitle">Aurelin resolved project layout and imports to detect architectural patterns with confidence scores.</p>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                        {detectedPatterns.map((pattern: any, idx: number) => (
+                            <div key={idx} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card-hover)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <strong style={{ fontSize: '15px' }}>{pattern.name}</strong>
+                                    <span style={{
+                                        color: pattern.confidence >= 80 ? '#22c55e' : pattern.confidence >= 60 ? '#f59e0b' : '#f87171',
+                                        background: pattern.confidence >= 80 ? 'rgba(34, 197, 94, 0.1)' : pattern.confidence >= 60 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                    }}>
+                                        {pattern.confidence}% Match
+                                    </span>
+                                </div>
+                                <p style={{ fontSize: '13px', margin: 0, color: 'var(--text-muted)' }}>{pattern.description}</p>
+                                <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '4px', color: 'var(--text)' }}>Evidence:</div>
+                                    <ul style={{ margin: 0, paddingLeft: '16px', listStyleType: 'disc', color: 'var(--text-muted)' }}>
+                                        {pattern.evidence.map((ev: string, i: number) => (
+                                            <li key={i} style={{ marginBottom: '2px' }}>{ev}</li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         ))}

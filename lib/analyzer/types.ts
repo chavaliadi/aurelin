@@ -1,7 +1,7 @@
 export type Grade = 'Excellent' | 'Good' | 'Fair' | 'Critical';
 export type Severity = 'high' | 'medium' | 'low';
 export type Priority = 'quick-win' | 'structural';
-export type IssueCategory = 'structural' | 'language';
+export type IssueCategory = 'structural' | 'language' | 'security' | 'framework';
 export type IssueType =
   | 'complexity'
   | 'length'
@@ -25,7 +25,15 @@ export type IssueType =
   | 'long_method'
   | 'raw_pointer'
   | 'using_namespace_std'
-  | 'empty_destructor';
+  | 'empty_destructor'
+  | 'security_eval'
+  | 'security_secrets'
+  | 'security_sql'
+  | 'security_jwt'
+  | 'security_xss'
+  | 'framework_misplaced_client'
+  | 'framework_missing_suspense'
+  | 'framework_nested_state';
 
 export interface CategoryScores {
   readability: number;      // nesting + function length
@@ -80,11 +88,19 @@ export interface CorrectnessResult {
   lintErrors?: LintErrorDetail[];
 }
 
+export interface RecognizedPattern {
+  name: string;
+  confidence: number;
+  evidence: string[];
+  description: string;
+}
+
 export interface ArchitectureInsights {
   mermaidGraph: string;
   cycles: string[][];
   deadCode: string[];
   godFiles: string[];
+  patterns?: RecognizedPattern[];
 }
 
 export interface RootCauseCluster {
@@ -161,5 +177,7 @@ export interface ProjectResult {
   architectureInsights?: ArchitectureInsights;
   rootCauseClusters?: RootCauseCluster[];
   topFixes?: TopFix[];
+  detectedPatterns?: RecognizedPattern[];
+  allIssues?: { filePath: string; issue: Issue }[];
 }
 

@@ -37,6 +37,8 @@ interface SaveScanParams {
     architectureInsights?: string;
     rootCauseClusters?: string;
     topFixes?: string;
+    detectedPatterns?: string;
+    allIssues?: string;
 }
 
 export async function saveScanToConvex(params: SaveScanParams): Promise<string> {
@@ -62,6 +64,8 @@ export async function saveScanToConvex(params: SaveScanParams): Promise<string> 
         architectureInsights: params.architectureInsights,
         rootCauseClusters: params.rootCauseClusters,
         topFixes: params.topFixes,
+        detectedPatterns: params.detectedPatterns,
+        allIssues: params.allIssues,
     });
 
     return scanId;

@@ -48,6 +48,8 @@ export default defineSchema({
     architectureInsights: v.optional(v.string()), // JSON.stringify(ArchitectureInsights)
     rootCauseClusters: v.optional(v.string()),   // JSON.stringify(RootCauseCluster[])
     topFixes: v.optional(v.string()),            // JSON.stringify(TopFix[])
+    detectedPatterns: v.optional(v.string()),    // JSON.stringify(RecognizedPattern[])
+    allIssues: v.optional(v.string()),           // JSON.stringify(ProjectIssue[])
 
     // Timestamp
     createdAt: v.number(),           // Date.now()

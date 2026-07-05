@@ -195,14 +195,22 @@ export default function DashboardPage() {
                         {activeProject && latestScan && (
                             <>
                                 {/* Evolution banner */}
-                                {scoreDelta !== null && (
-                                    <div className={`dash-evolution-banner ${scoreDelta >= 0 ? 'positive' : 'negative'}`}>
-                                        <TrendingUp size={15} />
-                                        {scoreDelta > 0
-                                            ? `${activeProject} improved ${scoreDelta} points since the last scan. Momentum is building! 🚀`
-                                            : scoreDelta < 0
-                                                ? `Score dipped ${Math.abs(scoreDelta)} points. Reviewing the flagged areas could bring it back up.`
-                                                : `Score held steady since the last scan. Solid consistency.`}
+                                {scoreDelta !== null && previousScan && (
+                                    <div className={`dash-evolution-banner ${scoreDelta >= 0 ? 'positive' : 'negative'}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <TrendingUp size={15} />
+                                            <span>
+                                                {scoreDelta > 0
+                                                    ? `${activeProject} improved ${scoreDelta} points since the last scan. Momentum is building! 🚀`
+                                                    : scoreDelta < 0
+                                                        ? `Score dipped ${Math.abs(scoreDelta)} points. Reviewing the flagged areas could bring it back up.`
+                                                        : `Score held steady since the last scan. Solid consistency.`}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '16px', fontSize: '12px', opacity: 0.85, paddingLeft: '21px' }}>
+                                            <span>Files: {latestScan.totalFiles} ({latestScan.totalFiles - previousScan.totalFiles >= 0 ? `+${latestScan.totalFiles - previousScan.totalFiles}` : latestScan.totalFiles - previousScan.totalFiles})</span>
+                                            <span>Lines: {latestScan.totalLines.toLocaleString()} ({latestScan.totalLines - previousScan.totalLines >= 0 ? `+${(latestScan.totalLines - previousScan.totalLines).toLocaleString()}` : (latestScan.totalLines - previousScan.totalLines).toLocaleString()})</span>
+                                        </div>
                                     </div>
                                 )}
 
