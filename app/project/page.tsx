@@ -23,6 +23,11 @@ export default function ProjectPage() {
     const router = useRouter();
     const { user } = useUser();
 
+    const projectName = useMemo(() => {
+        if (typeof window === 'undefined') return 'My Project';
+        return sessionStorage.getItem('cv_project_name') ?? 'My Project';
+    }, []);
+
     const historyScans = useQuery(
         api.scans.getLastTwoScansForProject,
         user ? { userId: user.id, projectName } : 'skip'

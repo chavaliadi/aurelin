@@ -1,7 +1,7 @@
 import type { 
     MetricsSummary, Grade, CategoryScores, ArchitectureInsights, 
     RootCauseCluster, TopFix, Issue, FileResult, ProjectResult, 
-    CorrectnessConfidenceBand, TopImprovement 
+    CorrectnessConfidenceBand, TopImprovement, RecognizedPattern 
 } from './types';
 import path from 'node:path';
 

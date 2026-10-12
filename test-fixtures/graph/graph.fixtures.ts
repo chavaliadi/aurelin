@@ -236,7 +236,7 @@ export const CYCLE_SCENARIOS: GraphScenario[] = [
     config: { 'proj/tsconfig.json': TSCONFIG_AT_ROOT },
     expectedUnreferenced: [],
     expectedCycles: 1,
-    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: ['proj/b.ts'], cyclesFound: 0 },
     fixedByPhase: '2C',
   },
   {
@@ -250,7 +250,7 @@ export const CYCLE_SCENARIOS: GraphScenario[] = [
     },
     expectedUnreferenced: [],
     expectedCycles: 1,
-    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: ['src/lib/b.ts'], cyclesFound: 0 },
     fixedByPhase: '2B',
   },
 ];

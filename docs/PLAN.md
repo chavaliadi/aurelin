@@ -83,7 +83,7 @@ Note: an earlier claim that `/api/save-scan` has no auth was wrong. Clerk middle
 | 2D | S6, S7 |
 | controls (always `it`) | S0, S5a, C0 |
 
-Start of Phase 2: 8 failing-by-design, 3 passing controls. End: 0 failing-by-design.
+Start of Phase 2: 10 failing-by-design, 3 passing controls. End: 0 failing-by-design.
 
 ## 6. Phases
 
@@ -92,7 +92,7 @@ Each phase: one branch, one PR, one report. Do not start the next until the huma
 ### Phase 0: Baseline + harness
 - **Does:** install Vitest, add `npm test`, load the fixtures file, write one runner test that feeds each scenario through the real pipeline, wraps gaps in `it.fails`, controls in `it`.
 - **Not allowed:** changing any analyzer behavior.
-- **Done when:** `npm test` green; 3 controls pass; 8 gap scenarios are `it.fails`; `npm run build` and lint unchanged from before.
+- **Done when:** `npm test` green; 3 controls pass; 10 gap scenarios are `it.fails`; `npm run build` and lint unchanged from before.
 - **Needs from you:** confirm Vitest is OK (new dev dependency).
 
 ### Phase 1A: Identity (P0)

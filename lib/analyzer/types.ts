@@ -179,5 +179,6 @@ export interface ProjectResult {
   topFixes?: TopFix[];
   detectedPatterns?: RecognizedPattern[];
   allIssues?: { filePath: string; issue: Issue }[];
+  scanId?: string;
 }
 
