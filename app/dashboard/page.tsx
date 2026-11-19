@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, UserButton } from '@clerk/nextjs';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useConvexAuth } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { BarChart2, TrendingUp, Clock, Share2, Plus, Trash2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -62,9 +62,11 @@ export default function DashboardPage() {
     // Hydration guard — prevents Date.now() mismatch crash
     useEffect(() => { setMounted(true); }, []);
 
+    const { isAuthenticated } = useConvexAuth();
+
     const scans = useQuery(
         api.scans.getScansByUser,
-        isLoaded && user ? { userId: user.id } : 'skip'
+        isAuthenticated ? {} : 'skip'
     ) as ScanSummary[] | undefined;
 
     useEffect(() => {
@@ -120,7 +122,7 @@ export default function DashboardPage() {
         if (!ok) return;
         setDeletingProject(true);
         try {
-            await deleteProjectScans({ userId: user.id, projectName: activeProject });
+            await deleteProjectScans({ projectName: activeProject });
             setSelectedProject(null);
         } finally {
             setDeletingProject(false);

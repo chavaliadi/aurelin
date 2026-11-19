@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { saveScanToConvex } from '@/lib/db/saveScan';
 import type { FileResult } from '@/lib/analyzer/types';
 
 export async function POST(req: NextRequest) {
     try {
+        const { userId, getToken } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized: authentication required to save scans.' }, { status: 401 });
+        }
+
+        const token = await getToken({ template: 'convex' });
+        if (!token) {
+            return NextResponse.json({ error: 'Unauthorized: missing Convex authentication token.' }, { status: 401 });
+        }
+
         const body = await req.json();
         const {
-            userId,
             projectName,
             projectScore,
             grade,
@@ -31,7 +41,7 @@ export async function POST(req: NextRequest) {
         }
 
         const scanId = await saveScanToConvex({
-            userId: userId ?? 'guest',
+            token,
             projectName: projectName ?? 'Untitled Project',
             languageMode: languageMode ?? 'mixed',
             projectScore,

@@ -2,8 +2,6 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { FileResult } from "@/lib/analyzer/types";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 function generateScanId(): string {
     return Math.random().toString(36).slice(2, 10) +
         Math.random().toString(36).slice(2, 10);
@@ -16,7 +14,7 @@ function extractAiSummary(aiExplanation: string): string {
 }
 
 interface SaveScanParams {
-    userId: string;
+    token: string;
     projectName: string;
     languageMode: string;
     projectScore: number;
@@ -43,9 +41,10 @@ interface SaveScanParams {
 
 export async function saveScanToConvex(params: SaveScanParams): Promise<string> {
     const scanId = generateScanId();
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    convex.setAuth(params.token);
 
     await convex.mutation(api.scans.saveScan, {
-        userId: params.userId,
         scanId,
         projectName: params.projectName,
         languageMode: params.languageMode,

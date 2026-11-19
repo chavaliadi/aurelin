@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
-import { useQuery } from 'convex/react';
+import { useQuery, useConvexAuth } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { ArrowLeft, RefreshCw, TrendingUp, ChevronUp, ChevronDown, Minus, Share2, X, Check, BarChart2, ShieldAlert, Code } from 'lucide-react';
 import type { ProjectResult, FileResult } from '@/lib/analyzer/types';
@@ -28,9 +28,11 @@ export default function ProjectPage() {
         return sessionStorage.getItem('cv_project_name') ?? 'My Project';
     }, []);
 
+    const { isAuthenticated } = useConvexAuth();
+
     const historyScans = useQuery(
         api.scans.getLastTwoScansForProject,
-        user ? { userId: user.id, projectName } : 'skip'
+        isAuthenticated ? { projectName } : 'skip'
     );
 
     const previousScan = useMemo(() => {
@@ -70,7 +72,6 @@ export default function ProjectPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId: user.id,
                 projectName,
                 languageMode,
                 projectScore: project.projectScore,
@@ -188,7 +189,6 @@ export default function ProjectPage() {
         try {
             // Ask the server to save the scan and return a scanId
             const payload = {
-                userId: user?.id ?? 'guest',
                 projectName: sessionStorage.getItem('cv_project_name') ?? 'My Project',
                 projectScore: p.projectScore,
                 grade: p.projectGrade,
@@ -266,9 +266,15 @@ export default function ProjectPage() {
                     {project.topImprovements.length > 0 && (
                         <span className="pill pill-medium">{project.topImprovements.length} areas to improve</span>
                     )}
-                    <button className="share-trigger-btn" onClick={() => setShowShareModal(true)}>
-                        <Share2 size={13} /> Share Report
-                    </button>
+                    {user ? (
+                        <button className="share-trigger-btn" onClick={() => setShowShareModal(true)}>
+                            <Share2 size={13} /> Share Report
+                        </button>
+                    ) : (
+                        <button className="share-trigger-btn" onClick={() => router.push('/sign-in')} title="Sign in to share">
+                            <Share2 size={13} /> Sign in to share
+                        </button>
+                    )}
                 </div>
             </div>
 

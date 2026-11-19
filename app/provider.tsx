@@ -2,9 +2,7 @@
 
 import UserDetailContext from "@/context/UserDetailContext";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
-import { set } from "date-fns";
+import { useConvexAuth, useMutation } from "convex/react";
 import React, { useEffect, useState } from "react";
 
 function Provider({ children,
@@ -12,25 +10,22 @@ function Provider({ children,
     children: React.ReactNode;
 }>
 ) {
-
-    const { user } = useUser();
+    const { isAuthenticated } = useConvexAuth();
     const createUser = useMutation(api.user.CreateNewUser);
     const [useDetail, setUserDetail] = useState<{ name: string; email: string; token: number } | undefined>();
 
     const CreateAndGetUser = async () => {
-        if (user) {
-            const result = await createUser({
-                name: user.fullName || "No Name",
-                email: user.emailAddresses[0]?.emailAddress || ''
-            });
-            console.log("User created or fetched:", result);
+        if (isAuthenticated) {
+            const result = await createUser({});
             setUserDetail(result);
         }
     };
 
     useEffect(() => {
-        CreateAndGetUser();
-    }, [user]);
+        if (isAuthenticated) {
+            CreateAndGetUser();
+        }
+    }, [isAuthenticated]);
 
     return (
         <UserDetailContext.Provider value={{ useDetail, setUserDetail }}>
@@ -39,4 +34,4 @@ function Provider({ children,
     );
 }
 
-export default Provider
+export default Provider;

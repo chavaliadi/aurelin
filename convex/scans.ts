@@ -5,7 +5,6 @@ import { v } from "convex/values";
 
 export const saveScan = mutation({
     args: {
-        userId: v.string(),
         scanId: v.string(),
         projectName: v.string(),
         languageMode: v.string(),
@@ -31,8 +30,14 @@ export const saveScan = mutation({
         allIssues: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         return await ctx.db.insert("ScansTable", {
             ...args,
+            userId: identity.subject,
             createdAt: Date.now(),
         });
     },
@@ -41,11 +46,16 @@ export const saveScan = mutation({
 // ─── Get last two scans for a project (for delta) ───────────────────────────
 
 export const getLastTwoScansForProject = query({
-    args: { userId: v.string(), projectName: v.string() },
+    args: { projectName: v.string() },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         const scans = await ctx.db
             .query("ScansTable")
-            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
             .order("desc")
             .collect();
 
@@ -74,11 +84,16 @@ export const getLastTwoScansForProject = query({
 // ─── Get all scans for a user (dashboard) ────────────────────────────────────
 
 export const getScansByUser = query({
-    args: { userId: v.string() },
-    handler: async (ctx, args) => {
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         const scans = await ctx.db
             .query("ScansTable")
-            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
             .order("desc")
             .collect();
 
@@ -103,11 +118,16 @@ export const getScansByUser = query({
 // ─── Get scans grouped by project name ───────────────────────────────────────
 
 export const getProjectHistory = query({
-    args: { userId: v.string(), projectName: v.string() },
+    args: { projectName: v.string() },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         const scans = await ctx.db
             .query("ScansTable")
-            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
             .order("asc")  // oldest first for trend chart
             .collect();
 
@@ -168,15 +188,20 @@ export const getScanById = query({
 // ─── Delete a scan ────────────────────────────────────────────────────────────
 
 export const deleteScan = mutation({
-    args: { scanId: v.string(), userId: v.string() },
+    args: { scanId: v.string() },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         const scan = await ctx.db
             .query("ScansTable")
             .withIndex("by_scanId", (q) => q.eq("scanId", args.scanId))
             .first();
 
         // Only allow deleting your own scans
-        if (scan && scan.userId === args.userId) {
+        if (scan && scan.userId === identity.subject) {
             await ctx.db.delete(scan._id);
             return { success: true };
         }
@@ -185,12 +210,18 @@ export const deleteScan = mutation({
 });
 
 // ─── Delete all scans for a project ───────────────────────────────────────────
+
 export const deleteProjectScans = mutation({
-    args: { userId: v.string(), projectName: v.string() },
+    args: { projectName: v.string() },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthenticated");
+        }
+
         const scans = await ctx.db
             .query("ScansTable")
-            .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
             .collect();
 
         const target = scans.filter((s) => s.projectName === args.projectName);
