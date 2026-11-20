@@ -1,4 +1,5 @@
 import type { AnalysisResult, Issue, MetricsSummary, Grade, IssueType, Severity, Priority } from './types';
+import type { RawImport } from './graph.types';
 import { estimateImprovement } from './scorer';
 import { getLanguageModule } from './languages/index';
 
@@ -252,7 +253,11 @@ function detectTextSecuritySmells(code: string, language?: string): Issue[] {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export async function analyzeText(code: string, language?: string): Promise<Omit<AnalysisResult, 'aiExplanation'>> {
-    const rawImports = extractRawImportsText(code, language);
+    const rawImportStrings = extractRawImportsText(code, language);
+    const rawImports: RawImport[] = rawImportStrings.map((specifier) => ({
+        specifier,
+        kind: 'import',
+    }));
     const lines = code.split('\n');
     const totalLines = lines.length;
 

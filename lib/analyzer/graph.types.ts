@@ -3,6 +3,7 @@ export type EdgeKind = 'import' | 'require' | 'dynamic' | 'reexport';
 export interface RawImport {
   specifier: string;
   kind: EdgeKind;
+  isNonLiteral?: boolean;
 }
 
 export interface GraphEdge {

@@ -87,6 +87,12 @@ async function runScenario(scenario: GraphScenario): Promise<ProjectResult> {
 function extractPreExistingFields(project: ProjectResult): Record<string, unknown> {
   const copy: Record<string, unknown> = { ...(project as unknown as Record<string, unknown>) };
   delete copy.graph;
+  if (Array.isArray(copy.fileResults)) {
+    copy.fileResults = (copy.fileResults as FileResult[]).map((f) => ({
+      ...f,
+      imports: f.imports?.map((imp) => (typeof imp === 'string' ? imp : imp.specifier)),
+    }));
+  }
   return copy;
 }
 

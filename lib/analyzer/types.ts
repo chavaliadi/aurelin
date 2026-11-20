@@ -1,4 +1,4 @@
-import type { Graph } from './graph.types';
+import type { Graph, RawImport } from './graph.types';
 
 export type { Graph, GraphEdge, RawImport, EdgeKind } from './graph.types';
 
@@ -131,7 +131,7 @@ export interface AnalysisResult {
   aiExplanation: string;
   estimatedImprovement?: number; // pts if quick wins addressed
   categoryScores?: CategoryScores;
-  imports?: string[];
+  imports?: RawImport[];
 }
 
 export interface FileResult {
@@ -145,7 +145,7 @@ export interface FileResult {
   issueCount: number;
   metrics: MetricsSummary;
   mode: 'deep' | 'quick';
-  imports?: string[];
+  imports?: RawImport[];
 }
 
 export type CorrectnessConfidenceBand = 'high' | 'medium' | 'low' | 'unknown';

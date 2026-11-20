@@ -1,7 +1,8 @@
-import traverse from '@babel/traverse';
+import traverse, { type NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
 import type { File } from '@babel/types';
 import type { Issue, MetricsSummary, IssueType, Severity, Priority } from './types';
+import type { RawImport } from './graph.types';
 import path from 'node:path';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -389,7 +390,7 @@ function detectNextjsSmells(ast: t.File, code: string, filePath: string): Issue[
 export interface RawMetrics {
     summary: MetricsSummary;
     issues: Issue[];
-    imports: string[];
+    imports: RawImport[];
 }
 
 export function computeMetrics(ast: t.File, code: string, filePath: string = 'file.ts'): RawMetrics {
@@ -405,13 +406,64 @@ export function computeMetrics(ast: t.File, code: string, filePath: string = 'fi
 
     const functionComplexities: number[] = [];
     const functionLengths: number[] = [];
-    const imports: string[] = [];
+    const imports: RawImport[] = [];
 
-    // ── function-level metrics ──
+    // ── function-level metrics & import extraction ──
     traverse(ast, {
-        ImportDeclaration(path: any) {
+        ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
             if (path.node.source?.value) {
-                imports.push(path.node.source.value);
+                imports.push({ specifier: path.node.source.value, kind: 'import' });
+            }
+        },
+        ExportAllDeclaration(path: NodePath<t.ExportAllDeclaration>) {
+            if (path.node.source?.value) {
+                imports.push({ specifier: path.node.source.value, kind: 'reexport' });
+            }
+        },
+        ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>) {
+            if (path.node.source?.value) {
+                imports.push({ specifier: path.node.source.value, kind: 'reexport' });
+            }
+        },
+        ImportExpression(path: NodePath<t.ImportExpression>) {
+            const src = path.node.source;
+            if (src) {
+                if (t.isStringLiteral(src)) {
+                    imports.push({ specifier: src.value, kind: 'dynamic' });
+                } else if (t.isTemplateLiteral(src) && src.expressions.length === 0 && src.quasis.length === 1 && src.quasis[0].value?.raw) {
+                    imports.push({ specifier: src.quasis[0].value.raw, kind: 'dynamic' });
+                } else {
+                    const nonLiteral = src.start != null && src.end != null ? code.slice(src.start, src.end) : '<unresolved>';
+                    imports.push({ specifier: nonLiteral, kind: 'dynamic', isNonLiteral: true });
+                }
+            }
+        },
+        CallExpression(path: NodePath<t.CallExpression>) {
+            const callee = path.node.callee;
+            if (t.isImport(callee) || callee?.type === 'Import') {
+                const arg = path.node.arguments[0];
+                if (arg) {
+                    if (t.isStringLiteral(arg)) {
+                        imports.push({ specifier: arg.value, kind: 'dynamic' });
+                    } else if (t.isTemplateLiteral(arg) && arg.expressions.length === 0 && arg.quasis.length === 1 && arg.quasis[0].value?.raw) {
+                        imports.push({ specifier: arg.quasis[0].value.raw, kind: 'dynamic' });
+                    } else {
+                        const nonLiteral = arg.start != null && arg.end != null ? code.slice(arg.start, arg.end) : '<unresolved>';
+                        imports.push({ specifier: nonLiteral, kind: 'dynamic', isNonLiteral: true });
+                    }
+                }
+            } else if (t.isIdentifier(callee, { name: 'require' })) {
+                const arg = path.node.arguments[0];
+                if (arg) {
+                    if (t.isStringLiteral(arg)) {
+                        imports.push({ specifier: arg.value, kind: 'require' });
+                    } else if (t.isTemplateLiteral(arg) && arg.expressions.length === 0 && arg.quasis.length === 1 && arg.quasis[0].value?.raw) {
+                        imports.push({ specifier: arg.quasis[0].value.raw, kind: 'require' });
+                    } else {
+                        const nonLiteral = arg.start != null && arg.end != null ? code.slice(arg.start, arg.end) : '<unresolved>';
+                        imports.push({ specifier: nonLiteral, kind: 'require', isNonLiteral: true });
+                    }
+                }
             }
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

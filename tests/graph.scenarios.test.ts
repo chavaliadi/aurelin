@@ -110,7 +110,9 @@ describe('Aurelin Graph Scenarios Test Harness', () => {
     for (const scenario of allScenarios) {
       const testTitle = `${scenario.id}: ${scenario.title}`;
 
-      if (scenario.kind === 'control') {
+      const isFlippedPhase2B = ['S1', 'S2', 'C2'].includes(scenario.id);
+
+      if (scenario.kind === 'control' || isFlippedPhase2B) {
         it(testTitle, async () => {
           const { unreferenced, cycleCount } = await runScenarioPipeline(scenario);
           expect(unreferenced).toEqual([...scenario.expectedUnreferenced].sort());

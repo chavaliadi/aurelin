@@ -307,24 +307,35 @@ export function aggregateResults(
     const inDegreeMap = new Map<string, number>();
     const edges: GraphEdge[] = [];
     const unresolved: { from: string; specifier: string }[] = [];
+    const seenEdges = new Set<string>();
 
     fileResults.forEach(f => {
-        const resolved = (f.imports || [])
-            .map((imp: string) => resolveImportPath(imp, f.filePath, allFilesSet))
-            .filter((imp: string | null): imp is string => imp !== null);
+        const resolvedList: string[] = [];
 
-        const uniqueResolved = Array.from(new Set(resolved));
+        (f.imports || []).forEach(rawImp => {
+            if (rawImp.isNonLiteral) {
+                unresolved.push({ from: f.filePath, specifier: rawImp.specifier });
+                return;
+            }
+
+            const target = resolveImportPath(rawImp.specifier, f.filePath, allFilesSet);
+            if (target !== null) {
+                resolvedList.push(target);
+                const edgeKey = `${f.filePath}->${target}:${rawImp.kind}`;
+                if (!seenEdges.has(edgeKey)) {
+                    seenEdges.add(edgeKey);
+                    edges.push({ from: f.filePath, to: target, kind: rawImp.kind });
+                }
+            } else if (rawImp.specifier.startsWith('.') || rawImp.specifier.startsWith('@/')) {
+                unresolved.push({ from: f.filePath, specifier: rawImp.specifier });
+            }
+        });
+
+        const uniqueResolved = Array.from(new Set(resolvedList));
         adjList.set(f.filePath, uniqueResolved);
 
         uniqueResolved.forEach(target => {
             inDegreeMap.set(target, (inDegreeMap.get(target) || 0) + 1);
-            edges.push({ from: f.filePath, to: target, kind: 'import' });
-        });
-
-        (f.imports || []).forEach((imp: string) => {
-            if ((imp.startsWith('.') || imp.startsWith('@/')) && resolveImportPath(imp, f.filePath, allFilesSet) === null) {
-                unresolved.push({ from: f.filePath, specifier: imp });
-            }
         });
     });
 

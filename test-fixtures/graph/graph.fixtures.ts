@@ -68,7 +68,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['src/lib/greet.ts', 'src/lib/math.ts'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2B',
   },
   {
@@ -82,7 +82,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['src/a.js', 'src/b.js'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2B',
     note: "Next.js dynamic(() => import('./x')) is the same shape and very common.",
   },
@@ -250,7 +250,7 @@ export const CYCLE_SCENARIOS: GraphScenario[] = [
     },
     expectedUnreferenced: [],
     expectedCycles: 1,
-    measuredToday: { falseUnreferenced: ['src/lib/b.ts'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 1 },
     fixedByPhase: '2B',
   },
 ];
