@@ -1,0 +1,400 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Phase 2A Snapshot Verification: byte-identical existing fields + Graph present > C0 > C0: pre-existing output fields unchanged 1`] = `
+{
+  "aiExplanation": "",
+  "allIssues": [
+    {
+      "filePath": "proj/a.ts",
+      "issue": {
+        "category": "structural",
+        "confidence": 100,
+        "message": ""b" is imported but not used anywhere. Removing it keeps things tidy and slightly reduces bundle size.",
+        "method": "AST",
+        "name": "b",
+        "priority": "quick-win",
+        "severity": "low",
+        "type": "unused_imports",
+      },
+    },
+    {
+      "filePath": "proj/b.ts",
+      "issue": {
+        "category": "structural",
+        "confidence": 100,
+        "message": ""a" is imported but not used anywhere. Removing it keeps things tidy and slightly reduces bundle size.",
+        "method": "AST",
+        "name": "a",
+        "priority": "quick-win",
+        "severity": "low",
+        "type": "unused_imports",
+      },
+    },
+  ],
+  "architectureInsights": {
+    "cycles": [
+      [
+        "proj/a.ts",
+        "proj/b.ts",
+      ],
+    ],
+    "deadCode": [],
+    "godFiles": [],
+    "mermaidGraph": "graph TD
+    proj_a_ts["a.ts"]
+    proj_b_ts["b.ts"]
+    proj_a_ts --> proj_b_ts
+    proj_b_ts --> proj_a_ts",
+    "patterns": [],
+  },
+  "categoryScores": {
+    "cleanliness": 88,
+    "maintainability": 100,
+    "readability": 100,
+    "structure": 100,
+  },
+  "correctnessSummary": {
+    "confidenceBand": "high",
+    "failFiles": 0,
+    "filesChecked": 2,
+    "filesFailedSyntax": 0,
+    "filesUnchecked": 0,
+    "passFiles": 0,
+  },
+  "detectedPatterns": [],
+  "fileResults": [
+    {
+      "filePath": "proj/b.ts",
+      "filename": "b.ts",
+      "grade": "Excellent",
+      "imports": [
+        "./a",
+      ],
+      "issueCount": 1,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 1,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": ""a" is imported but not used anywhere. Removing it keeps things tidy and slightly reduces bundle siz",
+    },
+    {
+      "filePath": "proj/a.ts",
+      "filename": "a.ts",
+      "grade": "Excellent",
+      "imports": [
+        "./b",
+      ],
+      "issueCount": 1,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 1,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": ""b" is imported but not used anywhere. Removing it keeps things tidy and slightly reduces bundle siz",
+    },
+  ],
+  "projectGrade": "Excellent",
+  "projectScore": 100,
+  "rootCauseClusters": [
+    {
+      "affectedFiles": [
+        "a.ts",
+        "b.ts",
+      ],
+      "architecturalTip": "",
+      "categories": [
+        "unused_imports",
+      ],
+      "folder": "proj",
+      "issueCount": 2,
+    },
+  ],
+  "summary": "Your project is in solid shape overall. b.ts is your strongest file — a.ts has the most room to grow.",
+  "topFixes": [
+    {
+      "description": "1 circular loops detected (e.g. a.ts -> b.ts). Extract shared interfaces to improve testability.",
+      "impact": "High",
+      "rank": 1,
+      "title": "Break Circular Dependencies",
+    },
+  ],
+  "topImprovements": [
+    {
+      "affectedFiles": 2,
+      "area": "Clean Up Unused Imports",
+      "description": "2 files have unused imports. Removing them keeps things tidy and slightly reduces bundle size.",
+      "potentialGain": 5,
+    },
+  ],
+  "totalFiles": 2,
+  "totalFunctions": 0,
+  "totalLines": 2,
+}
+`;
+
+exports[`Phase 2A Snapshot Verification: byte-identical existing fields + Graph present > S0 > S0: pre-existing output fields unchanged 1`] = `
+{
+  "aiExplanation": "",
+  "allIssues": [],
+  "architectureInsights": {
+    "cycles": [],
+    "deadCode": [
+      "src/orphan.ts",
+    ],
+    "godFiles": [],
+    "mermaidGraph": "graph TD
+    src_a_ts["a.ts"]
+    src_main_ts["main.ts"]
+    src_b_ts["b.ts"]
+    src_orphan_ts["orphan.ts"]
+    src_a_ts --> src_b_ts
+    src_main_ts --> src_a_ts",
+    "patterns": [],
+  },
+  "categoryScores": {
+    "cleanliness": 100,
+    "maintainability": 100,
+    "readability": 100,
+    "structure": 100,
+  },
+  "correctnessSummary": {
+    "confidenceBand": "high",
+    "failFiles": 0,
+    "filesChecked": 4,
+    "filesFailedSyntax": 0,
+    "filesUnchecked": 0,
+    "passFiles": 0,
+  },
+  "detectedPatterns": [],
+  "fileResults": [
+    {
+      "filePath": "src/orphan.ts",
+      "filename": "orphan.ts",
+      "grade": "Excellent",
+      "imports": [],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+    {
+      "filePath": "src/b.ts",
+      "filename": "b.ts",
+      "grade": "Excellent",
+      "imports": [],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+    {
+      "filePath": "src/a.ts",
+      "filename": "a.ts",
+      "grade": "Excellent",
+      "imports": [
+        "./b",
+      ],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+    {
+      "filePath": "src/main.ts",
+      "filename": "main.ts",
+      "grade": "Excellent",
+      "imports": [
+        "./a",
+      ],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+  ],
+  "projectGrade": "Excellent",
+  "projectScore": 100,
+  "rootCauseClusters": [],
+  "summary": "Your project is in solid shape overall. orphan.ts is your strongest file — main.ts has the most room to grow.",
+  "topFixes": [
+    {
+      "description": "1 files are not imported anywhere in the project scope (e.g. orphan.ts). Verify and delete.",
+      "impact": "Medium",
+      "rank": 1,
+      "title": "Clean Up Dead Code",
+    },
+  ],
+  "topImprovements": [],
+  "totalFiles": 4,
+  "totalFunctions": 0,
+  "totalLines": 4,
+}
+`;
+
+exports[`Phase 2A Snapshot Verification: byte-identical existing fields + Graph present > S5a > S5a: pre-existing output fields unchanged 1`] = `
+{
+  "aiExplanation": "",
+  "allIssues": [],
+  "architectureInsights": {
+    "cycles": [],
+    "deadCode": [],
+    "godFiles": [],
+    "mermaidGraph": "graph TD
+    app_page_tsx["page.tsx"]
+    components_x_tsx["x.tsx"]
+    app_page_tsx --> components_x_tsx",
+    "patterns": [
+      {
+        "confidence": 100,
+        "description": "Next-generation React framework utilizing App Router structures, loading templates, and Server-first components.",
+        "evidence": [
+          "Detected \`/app\` folder with layout.tsx or page.tsx routing.",
+          "Next.js file convention match.",
+        ],
+        "name": "Next.js App Router",
+      },
+    ],
+  },
+  "categoryScores": {
+    "cleanliness": 100,
+    "maintainability": 100,
+    "readability": 100,
+    "structure": 100,
+  },
+  "correctnessSummary": {
+    "confidenceBand": "high",
+    "failFiles": 0,
+    "filesChecked": 2,
+    "filesFailedSyntax": 0,
+    "filesUnchecked": 0,
+    "passFiles": 0,
+  },
+  "detectedPatterns": [
+    {
+      "confidence": 100,
+      "description": "Next-generation React framework utilizing App Router structures, loading templates, and Server-first components.",
+      "evidence": [
+        "Detected \`/app\` folder with layout.tsx or page.tsx routing.",
+        "Next.js file convention match.",
+      ],
+      "name": "Next.js App Router",
+    },
+  ],
+  "fileResults": [
+    {
+      "filePath": "components/x.tsx",
+      "filename": "x.tsx",
+      "grade": "Excellent",
+      "imports": [],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 1,
+        "avgFunctionLength": 1,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 1,
+        "maxFunctionLength": 1,
+        "maxNestingDepth": 0,
+        "totalFunctions": 1,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+    {
+      "filePath": "app/page.tsx",
+      "filename": "page.tsx",
+      "grade": "Excellent",
+      "imports": [
+        "@/components/x",
+      ],
+      "issueCount": 0,
+      "metrics": {
+        "avgCyclomaticComplexity": 0,
+        "avgFunctionLength": 0,
+        "duplicationPercentage": 0,
+        "maxCyclomaticComplexity": 0,
+        "maxFunctionLength": 0,
+        "maxNestingDepth": 0,
+        "totalFunctions": 0,
+        "totalLines": 1,
+        "unusedImportCount": 0,
+      },
+      "mode": "deep",
+      "score": 100,
+      "topIssue": null,
+    },
+  ],
+  "projectGrade": "Excellent",
+  "projectScore": 100,
+  "rootCauseClusters": [],
+  "summary": "Your project is in solid shape overall. x.tsx is your strongest file — page.tsx has the most room to grow.",
+  "topFixes": [],
+  "topImprovements": [],
+  "totalFiles": 2,
+  "totalFunctions": 1,
+  "totalLines": 2,
+}
+`;

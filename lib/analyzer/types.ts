@@ -1,3 +1,7 @@
+import type { Graph } from './graph.types';
+
+export type { Graph, GraphEdge, RawImport, EdgeKind } from './graph.types';
+
 export type Grade = 'Excellent' | 'Good' | 'Fair' | 'Critical';
 export type Severity = 'high' | 'medium' | 'low';
 export type Priority = 'quick-win' | 'structural';
@@ -174,6 +178,7 @@ export interface ProjectResult {
   totalLines: number;
   totalFunctions: number;
   aiExplanation: string;
+  graph?: Graph;
   architectureInsights?: ArchitectureInsights;
   rootCauseClusters?: RootCauseCluster[];
   topFixes?: TopFix[];

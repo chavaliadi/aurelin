@@ -1,8 +1,9 @@
 import type { 
-    MetricsSummary, Grade, CategoryScores, ArchitectureInsights, 
+    Grade, CategoryScores, ArchitectureInsights, 
     RootCauseCluster, TopFix, Issue, FileResult, ProjectResult, 
     CorrectnessConfidenceBand, TopImprovement, RecognizedPattern 
 } from './types';
+import type { Graph, GraphEdge } from './graph.types';
 import path from 'node:path';
 
 // CategoryScores is imported from types.ts
@@ -276,6 +277,12 @@ export function aggregateResults(
             totalLines: 0,
             totalFunctions: 0,
             aiExplanation,
+            graph: {
+                nodes: [],
+                edges: [],
+                unresolved: [],
+                unsupportedLanguages: [],
+            },
         };
     }
 
@@ -298,6 +305,8 @@ export function aggregateResults(
     const allFilesSet = new Set(fileResults.map(f => f.filePath));
     const adjList = new Map<string, string[]>();
     const inDegreeMap = new Map<string, number>();
+    const edges: GraphEdge[] = [];
+    const unresolved: { from: string; specifier: string }[] = [];
 
     fileResults.forEach(f => {
         const resolved = (f.imports || [])
@@ -309,8 +318,22 @@ export function aggregateResults(
 
         uniqueResolved.forEach(target => {
             inDegreeMap.set(target, (inDegreeMap.get(target) || 0) + 1);
+            edges.push({ from: f.filePath, to: target, kind: 'import' });
+        });
+
+        (f.imports || []).forEach((imp: string) => {
+            if ((imp.startsWith('.') || imp.startsWith('@/')) && resolveImportPath(imp, f.filePath, allFilesSet) === null) {
+                unresolved.push({ from: f.filePath, specifier: imp });
+            }
         });
     });
+
+    const graph: Graph = {
+        nodes: fileResults.map(f => f.filePath),
+        edges,
+        unresolved,
+        unsupportedLanguages: [],
+    };
 
     // Detect cycles using Tarjan's SCC
     const cycles = findCycles(adjList);
@@ -540,6 +563,7 @@ export function aggregateResults(
         totalLines,
         totalFunctions,
         aiExplanation,
+        graph,
         architectureInsights,
         rootCauseClusters,
         topFixes: topFixes.slice(0, 5),

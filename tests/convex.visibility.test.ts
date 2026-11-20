@@ -50,7 +50,7 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       expect(result?.allIssues).toBeUndefined();
       expect(result?.architectureInsights).toBeUndefined();
       expect(result?.rootCauseClusters).toBeUndefined();
-      expect((result as any)?.fileResults).toBeUndefined();
+      expect((result as Record<string, unknown>)?.fileResults).toBeUndefined();
       expect(result?.topFixes).toBeUndefined();
     });
 
@@ -66,7 +66,7 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       expect(result?.allIssues).toBeUndefined();
       expect(result?.architectureInsights).toBeUndefined();
       expect(result?.rootCauseClusters).toBeUndefined();
-      expect((result as any)?.fileResults).toBeUndefined();
+      expect((result as Record<string, unknown>)?.fileResults).toBeUndefined();
       expect(result?.topFixes).toBeUndefined();
     });
 
@@ -80,7 +80,7 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       expect(result?.allIssues).toBeDefined();
       expect(result?.architectureInsights).toBeDefined();
       expect(result?.rootCauseClusters).toBeDefined();
-      expect((result as any)?.fileResults).toBeDefined();
+      expect((result as Record<string, unknown>)?.fileResults).toBeDefined();
       expect(result?.topFixes).toBeDefined();
     });
 
@@ -94,7 +94,7 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       expect(result?.allIssues).toBeDefined();
       expect(result?.architectureInsights).toBeDefined();
       expect(result?.rootCauseClusters).toBeDefined();
-      expect((result as any)?.fileResults).toBeDefined();
+      expect((result as Record<string, unknown>)?.fileResults).toBeDefined();
       expect(result?.topFixes).toBeDefined();
     });
   });
