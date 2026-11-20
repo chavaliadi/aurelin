@@ -2,9 +2,8 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { FileResult } from "@/lib/analyzer/types";
 
-function generateScanId(): string {
-    return Math.random().toString(36).slice(2, 10) +
-        Math.random().toString(36).slice(2, 10);
+export function generateScanId(): string {
+    return crypto.randomUUID();
 }
 
 function extractAiSummary(aiExplanation: string): string {
@@ -57,7 +56,7 @@ export async function saveScanToConvex(params: SaveScanParams): Promise<string> 
         topImprovements: params.topImprovements,
         aiSummary: extractAiSummary(params.aiExplanation),
         visibility: params.visibility,
-        fileResults: params.visibility === 'full' && params.fileResults
+        fileResults: params.fileResults
             ? JSON.stringify(params.fileResults)
             : undefined,
         architectureInsights: params.architectureInsights,

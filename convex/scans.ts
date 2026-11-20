@@ -155,6 +155,10 @@ export const getScanById = query({
 
         if (!results) return null;
 
+        const identity = await ctx.auth.getUserIdentity();
+        const isOwner = Boolean(identity && identity.subject === results.userId);
+        const canAccessFull = isOwner || results.visibility === "full";
+
         const base = {
             scanId: results.scanId,
             projectName: results.projectName,
@@ -169,16 +173,18 @@ export const getScanById = query({
             languageMode: results.languageMode,
             visibility: results.visibility,
             createdAt: results.createdAt,
-            architectureInsights: results.architectureInsights,
-            rootCauseClusters: results.rootCauseClusters,
-            topFixes: results.topFixes,
-            detectedPatterns: results.detectedPatterns,
-            allIssues: results.allIssues,
         };
 
-        // Only include file results if visibility is "full"
-        if (results.visibility === "full" && results.fileResults) {
-            return { ...base, fileResults: results.fileResults };
+        if (canAccessFull) {
+            return {
+                ...base,
+                architectureInsights: results.architectureInsights,
+                rootCauseClusters: results.rootCauseClusters,
+                topFixes: results.topFixes,
+                detectedPatterns: results.detectedPatterns,
+                allIssues: results.allIssues,
+                fileResults: results.fileResults,
+            };
         }
 
         return base;
