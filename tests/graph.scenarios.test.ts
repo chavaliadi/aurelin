@@ -85,8 +85,8 @@ async function runScenarioPipeline(scenario: GraphScenario): Promise<{
     }
   }
 
-  // Honor scenario.config (e.g. tsconfig.json) only to the extent the current code reads it (today: none)
-  const project = aggregateResults(fileResults, '', allIssues, []);
+  // Honor scenario.config (e.g. tsconfig.json)
+  const project = aggregateResults(fileResults, '', allIssues, [], scenario.config);
   const unreferenced = (project.architectureInsights?.deadCode ?? []).slice().sort();
   const cycles = project.architectureInsights?.cycles ?? [];
   const cycleCount = cycles.length;
@@ -110,9 +110,9 @@ describe('Aurelin Graph Scenarios Test Harness', () => {
     for (const scenario of allScenarios) {
       const testTitle = `${scenario.id}: ${scenario.title}`;
 
-      const isFlippedPhase2B = ['S1', 'S2', 'C2'].includes(scenario.id);
+      const isFlipped = ['S1', 'S2', 'C2', 'S3', 'S4', 'S5b', 'S5c', 'C1'].includes(scenario.id);
 
-      if (scenario.kind === 'control' || isFlippedPhase2B) {
+      if (scenario.kind === 'control' || isFlipped) {
         it(testTitle, async () => {
           const { unreferenced, cycleCount } = await runScenarioPipeline(scenario);
           expect(unreferenced).toEqual([...scenario.expectedUnreferenced].sort());

@@ -96,7 +96,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['src/util.ts'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2C',
   },
   {
@@ -111,7 +111,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     config: { 'tsconfig.json': TSCONFIG_CUSTOM },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['src/lib/y.ts', 'src/lib/z.ts'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2C',
   },
   {
@@ -140,7 +140,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     config: { 'myproj/tsconfig.json': TSCONFIG_AT_ROOT },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['myproj/components/x.tsx'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2C',
   },
   {
@@ -154,7 +154,7 @@ export const GRAPH_SCENARIOS: GraphScenario[] = [
     config: { 'tsconfig.json': TSCONFIG_SRC },
     expectedUnreferenced: [],
     expectedCycles: 0,
-    measuredToday: { falseUnreferenced: ['src/components/x.tsx'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 0 },
     fixedByPhase: '2C',
   },
   {
@@ -236,7 +236,7 @@ export const CYCLE_SCENARIOS: GraphScenario[] = [
     config: { 'proj/tsconfig.json': TSCONFIG_AT_ROOT },
     expectedUnreferenced: [],
     expectedCycles: 1,
-    measuredToday: { falseUnreferenced: ['proj/b.ts'], cyclesFound: 0 },
+    measuredToday: { falseUnreferenced: [], cyclesFound: 1 },
     fixedByPhase: '2C',
   },
   {

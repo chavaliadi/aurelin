@@ -3,7 +3,8 @@ import type {
     RootCauseCluster, TopFix, Issue, FileResult, ProjectResult, 
     CorrectnessConfidenceBand, TopImprovement, RecognizedPattern 
 } from './types';
-import type { Graph, GraphEdge } from './graph.types';
+import type { Graph } from './graph.types';
+import { resolveImports } from './resolve';
 import path from 'node:path';
 
 // CategoryScores is imported from types.ts
@@ -15,41 +16,6 @@ function gradeFromScore(score: number): Grade {
     if (score >= 70) return 'Good';
     if (score >= 50) return 'Fair';
     return 'Critical';
-}
-
-// ─── Import Resolution Heuristics ───────────────────────────────────────────
-function resolveImportPath(importSrc: string, currentFile: string, allFiles: Set<string>): string | null {
-    if (!importSrc.startsWith('.')) {
-        if (importSrc.startsWith('@/')) {
-            const relativeToRoot = importSrc.slice(2);
-            return matchFileCandidate(relativeToRoot, allFiles);
-        }
-        return null; // external package
-    }
-    const currentDir = path.posix.dirname(currentFile);
-    const resolved = path.posix.join(currentDir, importSrc);
-    return matchFileCandidate(resolved, allFiles);
-}
-
-function matchFileCandidate(resolvedPath: string, allFiles: Set<string>): string | null {
-    const candidates = [
-        resolvedPath,
-        resolvedPath + '.ts',
-        resolvedPath + '.tsx',
-        resolvedPath + '.js',
-        resolvedPath + '.jsx',
-        path.posix.join(resolvedPath, 'index.ts'),
-        path.posix.join(resolvedPath, 'index.tsx'),
-        path.posix.join(resolvedPath, 'index.js'),
-        path.posix.join(resolvedPath, 'index.jsx'),
-    ];
-    for (const c of candidates) {
-        const clean = c.replace(/^\.\//, '');
-        if (allFiles.has(clean)) {
-            return clean;
-        }
-    }
-    return null;
 }
 
 // ─── Tarjan's SCC for Cycle Detection ────────────────────────────────────────
@@ -255,7 +221,8 @@ export function aggregateResults(
     fileResults: FileResult[],
     aiExplanation: string,
     allIssues: { filePath: string; issue: Issue }[] = [],
-    dependencies: string[] = []
+    dependencies: string[] = [],
+    configs?: Record<string, string>
 ): ProjectResult {
     if (fileResults.length === 0) {
         return {
@@ -302,42 +269,25 @@ export function aggregateResults(
                     'low';
 
     // ── Import Graph Resolution ──────────────────────────────────────────
-    const allFilesSet = new Set(fileResults.map(f => f.filePath));
+    const allFilePaths = fileResults.map(f => f.filePath);
+    const { edges, unresolved } = resolveImports(fileResults, allFilePaths, configs);
+
     const adjList = new Map<string, string[]>();
     const inDegreeMap = new Map<string, number>();
-    const edges: GraphEdge[] = [];
-    const unresolved: { from: string; specifier: string }[] = [];
-    const seenEdges = new Set<string>();
 
     fileResults.forEach(f => {
-        const resolvedList: string[] = [];
-
-        (f.imports || []).forEach(rawImp => {
-            if (rawImp.isNonLiteral) {
-                unresolved.push({ from: f.filePath, specifier: rawImp.specifier });
-                return;
-            }
-
-            const target = resolveImportPath(rawImp.specifier, f.filePath, allFilesSet);
-            if (target !== null) {
-                resolvedList.push(target);
-                const edgeKey = `${f.filePath}->${target}:${rawImp.kind}`;
-                if (!seenEdges.has(edgeKey)) {
-                    seenEdges.add(edgeKey);
-                    edges.push({ from: f.filePath, to: target, kind: rawImp.kind });
-                }
-            } else if (rawImp.specifier.startsWith('.') || rawImp.specifier.startsWith('@/')) {
-                unresolved.push({ from: f.filePath, specifier: rawImp.specifier });
-            }
-        });
-
-        const uniqueResolved = Array.from(new Set(resolvedList));
-        adjList.set(f.filePath, uniqueResolved);
-
-        uniqueResolved.forEach(target => {
-            inDegreeMap.set(target, (inDegreeMap.get(target) || 0) + 1);
-        });
+        adjList.set(f.filePath, []);
+        inDegreeMap.set(f.filePath, 0);
     });
+
+    for (const edge of edges) {
+        const currentList = adjList.get(edge.from) || [];
+        if (!currentList.includes(edge.to)) {
+            currentList.push(edge.to);
+            adjList.set(edge.from, currentList);
+        }
+        inDegreeMap.set(edge.to, (inDegreeMap.get(edge.to) || 0) + 1);
+    }
 
     const graph: Graph = {
         nodes: fileResults.map(f => f.filePath),

@@ -12,9 +12,16 @@ export interface GraphEdge {
   kind: EdgeKind;
 }
 
+export interface UnresolvedImport {
+  from: string;
+  specifier: string;
+  reason?: 'ambiguous' | 'not_found' | 'non_literal';
+  candidates?: string[];
+}
+
 export interface Graph {
   nodes: string[];                 // normalized paths, wrapper folder stripped
   edges: GraphEdge[];
-  unresolved: { from: string; specifier: string }[];  // external packages excluded
+  unresolved: UnresolvedImport[];  // external packages excluded
   unsupportedLanguages: string[];  // languages with no graph support
 }
