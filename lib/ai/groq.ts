@@ -3,6 +3,7 @@ import type { AIProvider, AIFixResponse } from './types';
 import type { MetricsSummary, Issue } from '@/lib/analyzer/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const GROQ_MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b';
 
 // ─── Explain Prompt ───────────────────────────────────────────────────────────
 
@@ -162,7 +163,7 @@ export class GroqProvider implements AIProvider {
     ): Promise<string> {
         try {
             const completion = await groq.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 temperature: 0.2,
                 max_tokens: 450,
                 messages: [{ role: 'user', content: buildPrompt(metrics, issues, score, context) }],
@@ -182,7 +183,7 @@ export class GroqProvider implements AIProvider {
     ): Promise<AIFixResponse | null> {
         try {
             const completion = await groq.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 temperature: 0.1,   // lower temp = more deterministic JSON
                 max_tokens: 600,
                 messages: [
@@ -288,7 +289,7 @@ Your response MUST fit this exact JSON format:
 }`;
 
             const completion = await groq.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 temperature: 0.2,
                 max_tokens: 800,
                 messages: [

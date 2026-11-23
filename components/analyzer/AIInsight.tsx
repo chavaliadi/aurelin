@@ -5,6 +5,7 @@ import { Bot } from 'lucide-react';
 
 interface AIInsightProps {
     explanation: string;
+    model?: string;
 }
 
 function parseExplanation(raw: string): {
@@ -30,7 +31,7 @@ function parseExplanation(raw: string): {
     };
 }
 
-export default function AIInsight({ explanation }: AIInsightProps) {
+export default function AIInsight({ explanation, model }: AIInsightProps) {
     const { summary, actions, effort } = parseExplanation(explanation);
     const [displayed, setDisplayed] = useState('');
     const idxRef = useRef(0);
@@ -57,7 +58,7 @@ export default function AIInsight({ explanation }: AIInsightProps) {
             <div className="ai-insight-header">
                 <Bot size={18} color="#818cf8" />
                 <span>AI Engineering Insight</span>
-                <span className="ai-badge">Llama 3 70B</span>
+                {model && <span className="ai-badge">{model}</span>}
             </div>
 
             <p className="ai-summary">{displayed}<span className="cursor-blink">|</span></p>

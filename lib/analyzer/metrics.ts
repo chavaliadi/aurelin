@@ -1,4 +1,4 @@
-import traverse, { type NodePath } from '@babel/traverse';
+import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import type { File } from '@babel/types';
 import type { Issue, MetricsSummary, IssueType, Severity, Priority } from './types';
@@ -410,22 +410,26 @@ export function computeMetrics(ast: t.File, code: string, filePath: string = 'fi
 
     // ── function-level metrics & import extraction ──
     traverse(ast, {
-        ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ImportDeclaration(path: any) {
             if (path.node.source?.value) {
                 imports.push({ specifier: path.node.source.value, kind: 'import' });
             }
         },
-        ExportAllDeclaration(path: NodePath<t.ExportAllDeclaration>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ExportAllDeclaration(path: any) {
             if (path.node.source?.value) {
                 imports.push({ specifier: path.node.source.value, kind: 'reexport' });
             }
         },
-        ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ExportNamedDeclaration(path: any) {
             if (path.node.source?.value) {
                 imports.push({ specifier: path.node.source.value, kind: 'reexport' });
             }
         },
-        ImportExpression(path: NodePath<t.ImportExpression>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ImportExpression(path: any) {
             const src = path.node.source;
             if (src) {
                 if (t.isStringLiteral(src)) {
@@ -438,7 +442,8 @@ export function computeMetrics(ast: t.File, code: string, filePath: string = 'fi
                 }
             }
         },
-        CallExpression(path: NodePath<t.CallExpression>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        CallExpression(path: any) {
             const callee = path.node.callee;
             if (t.isImport(callee) || callee?.type === 'Import') {
                 const arg = path.node.arguments[0];

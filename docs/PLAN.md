@@ -71,6 +71,10 @@ interface Graph {
 | G14 | AI `topFixes` overwrites deterministic fixes; no grounding check | analyze-zip route ~L418 | P1 | 3 |
 | G15 | Files >100KB silently skipped | analyze-zip route | P2 | 5A |
 | G16 | Mermaid output only shows cycles + god files + top 10 | aggregate.ts | P3 | 4A |
+| G17 | Refactoring plan claims "Break Circular Dependencies" while Structural Findings reports none | Conquer scan 2026-11-21 | P2 | 3 |
+| G18 | "Top Project Strengths" claims clean imports while improvements report 8 files with unused imports | Conquer scan 2026-11-21 | P2 | 3 |
+| G19 | AI Insight states a project score that contradicts the deterministic score (86 vs 82) | Conquer scan 2026-11-21 | P1 | 3 |
+| G20 | Groq API failure is caught and swallowed; UI renders AI Insight anyway | Observed 2026-11-21 | P2 | 3 |
 
 Note: an earlier claim that `/api/save-scan` has no auth was wrong. Clerk middleware protects it. The real problem is G9/G11: the *identity used* comes from the body.
 
