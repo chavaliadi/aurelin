@@ -242,6 +242,9 @@ export class GroqProvider implements AIProvider {
             const prompt = `You are a Principal Software Architect reviewing a code repository.
 Your task is to analyze the structural complexity and provide a cohesive, top-tier engineering strategy for refactoring.
 
+CRITICAL GROUNDING INSTRUCTION:
+You must strictly reference ONLY file names, directory names, counts, metrics, and structural findings present in the data provided below. Do not invent, extrapolate, or hallucinate any files, directories, issues, or metrics not explicitly listed.
+
 PROJECT METRICS:
 - Overall Score: ${score}/100
 - Total Lines: ${metrics.totalLines}
@@ -262,7 +265,7 @@ ${clusters.length > 0 ? clusters.map(c => `- Folder: "${c.folder}" has ${c.issue
 Respond ONLY in valid JSON. Do NOT include markdown blocks. Do NOT wrap in \`\`\`json.
 Your response MUST fit this exact JSON format:
 {
-  "aiExplanation": "<3-4 sentences summarizing the project health, celebrating strengths, and calmly suggesting the single most critical structural focus. Reference metrics to ground your analysis. Use supportive, senior-engineer tone.>",
+  "aiExplanation": "<Provide a structured insight in supportive senior-engineer tone comprising: (1) 1-2 sentences on what the codebase does well, (2) 1-2 sentences on the single biggest structural risk, and (3) 1-2 sentences on what to fix first and why. Only reference files, metrics, and findings from the provided data; do not invent any.>",
   "clusters": [
     ${clusters.map(c => `{ "folder": "${c.folder}", "architecturalTip": "<A friendly, constructive 1-sentence tip on how to refactor this specific folder. E.g. \\"Consolidate common validation logic into a shared middleware.\\">" }`).join(',\n    ')}
   ],

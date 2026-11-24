@@ -428,7 +428,7 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
 
             {/* File Breakdown (only if visibility === 'full') */}
             {scan.visibility === 'full' && fileResults.length > 0 && (
-                <div className="glass-card file-table-section">
+                <div className="glass-card file-table-section" style={{ marginTop: '24px' }}>
                     <h2 className="card-title">File Breakdown</h2>
                     <div className="file-table-wrap">
                         <table className="file-table">

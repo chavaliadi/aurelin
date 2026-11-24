@@ -493,7 +493,7 @@ export default function ProjectPage() {
                     )}
                 </div>
 
-                <div className="glass-card ai-card">
+                <div className="glass-card ai-card" style={{ alignSelf: 'start' }}>
                     <h2 className="card-title">AI Insight</h2>
                     <AIInsight explanation={project.aiExplanation} />
                 </div>
@@ -674,7 +674,7 @@ export default function ProjectPage() {
             )}
 
             {/* ── File Breakdown ── */}
-            <div className="glass-card file-table-section">
+            <div className="glass-card file-table-section" style={{ marginTop: '24px' }}>
                 <h2 className="card-title">File Breakdown</h2>
                 <div className="file-table-wrap">
                     <table className="file-table">
