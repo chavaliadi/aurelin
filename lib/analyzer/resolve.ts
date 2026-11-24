@@ -181,12 +181,19 @@ export function choosePrimaryConfig(
         return a.norm.localeCompare(b.norm);
     });
 
-    const primary = scored[0];
-    const parsed = parseConfig(configs[primary.originalPath], primary.originalPath);
-    if (!parsed) return null;
+    // Try candidates in nearest-to-root order. If the nearest config is malformed
+    // (e.g. invalid JSON), skip it and try the next. Return null only if none parse.
+    for (let i = 0; i < scored.length; i++) {
+        const parsed = parseConfig(configs[scored[i].originalPath], scored[i].originalPath);
+        if (parsed) {
+            const ignoredConfigs = scored
+                .filter((_, idx) => idx !== i)
+                .map(s => s.originalPath);
+            return { config: parsed, ignoredConfigs };
+        }
+    }
 
-    const ignoredConfigs = scored.slice(1).map(s => s.originalPath);
-    return { config: parsed, ignoredConfigs };
+    return null;
 }
 
 /**
@@ -201,39 +208,25 @@ function getFileCandidates(targetPath: string): string[] {
     const candidates: string[] = [];
     const clean = targetPath.replace(/\\/g, '/').replace(/^\.\//, '');
 
-    // Check if clean ends with .js specifically (ESM TypeScript import: ./util.js -> util.ts)
+    // ESM .js suffix: ./util.js → try .ts, .tsx, .d.ts, then literal .js.
+    // TypeScript's ESM remapping is strictly .js → .ts/.tsx/.d.ts. No .jsx/.mjs/.cjs
+    // fallback, and no directory index fallback for explicit-extension specifiers.
     if (clean.endsWith('.js')) {
         const base = clean.slice(0, -3);
-        // 1. TS source files that emit to .js
         candidates.push(base + '.ts');
         candidates.push(base + '.tsx');
         candidates.push(base + '.d.ts');
-        // 2. Literal .js file
         candidates.push(clean);
-        // 3. Other JS variants
-        candidates.push(base + '.jsx');
-        candidates.push(base + '.mjs');
-        candidates.push(base + '.cjs');
-        // 4. Directory index fallback
-        for (const ext of RESOLUTION_PRECEDENCE_EXTENSIONS) {
-            candidates.push(path.posix.join(base, 'index' + ext));
-        }
         return candidates;
     }
 
-    // Check if clean ends with any other extension in RESOLUTION_PRECEDENCE_EXTENSIONS
+    // Explicit extension (.ts, .tsx, .d.ts, .jsx, .mjs, .cjs): literal path only.
+    // No cross-extension fallback — a specifier with an explicit extension that does
+    // not exist is not_found, never silently resolved to a different file.
+    // No directory index fallback for explicit-extension specifiers.
     const extMatch = RESOLUTION_PRECEDENCE_EXTENSIONS.find(ext => clean.endsWith(ext));
     if (extMatch) {
         candidates.push(clean);
-        const base = clean.slice(0, -extMatch.length);
-        for (const ext of RESOLUTION_PRECEDENCE_EXTENSIONS) {
-            if (ext !== extMatch) {
-                candidates.push(base + ext);
-            }
-        }
-        for (const ext of RESOLUTION_PRECEDENCE_EXTENSIONS) {
-            candidates.push(path.posix.join(base, 'index' + ext));
-        }
         return candidates;
     }
 
@@ -316,6 +309,11 @@ export function resolveSpecifier(
     }
 
     // 2. tsconfig / jsconfig paths mapping
+    // NOTE: A tsconfig paths pattern can shadow a real npm package (e.g. "@scope/*"
+    // mapped to "./packages/*" with packages/nextjs.ts present will resolve
+    // @scope/nextjs to packages/nextjs.ts instead of the npm package).
+    // TypeScript itself behaves the same way — paths take priority over node_modules.
+    // This is intentional; do not add workarounds or heuristics.
     if (ctx.config?.paths) {
         for (const [pattern, targetPatterns] of Object.entries(ctx.config.paths)) {
             const starIndex = pattern.indexOf('*');
@@ -352,6 +350,9 @@ export function resolveSpecifier(
     }
 
     // 3. baseUrl resolution without alias
+    // NOTE: With baseUrl set, every bare specifier is tried as a local file before
+    // being classified as external. A local react.ts therefore shadows the npm
+    // package 'react'. TypeScript itself behaves the same way; this is intentional.
     if (ctx.config?.baseUrl) {
         const baseDir = path.posix.join(ctx.config.configDir, ctx.config.baseUrl);
         const combined = path.posix.normalize(path.posix.join(baseDir, specifier));

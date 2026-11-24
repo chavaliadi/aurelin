@@ -34,6 +34,11 @@ describe('Import Resolver Unit Tests', () => {
             const files = ['proj/a.ts', 'proj/sub/b.ts', 'proj/sub/deep/c.ts'];
             expect(detectWrapperPrefix(files)).toBe('proj');
         });
+
+        it('returns empty string when root file is not first in the array', () => {
+            const files = ['proj/a.ts', 'package.json'];
+            expect(detectWrapperPrefix(files)).toBe('');
+        });
     });
 
     describe('2. TSConfig / JSConfig parsing & comments', () => {
@@ -80,6 +85,22 @@ describe('Import Resolver Unit Tests', () => {
             expect(selection).not.toBeNull();
             expect(selection?.config.configPath).toBe('myproj/tsconfig.json');
             expect(selection?.ignoredConfigs).toContain('myproj/packages/sub/tsconfig.json');
+        });
+
+        it('returns null for malformed JSON', () => {
+            const result = parseConfig('{ not valid json !!!', 'tsconfig.json');
+            expect(result).toBeNull();
+        });
+
+        it('falls back to deeper config when nearest config is malformed JSON', () => {
+            const configs = {
+                'tsconfig.json': '{ invalid json !!!',
+                'packages/sub/tsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: './sub' } }),
+            };
+            const selection = choosePrimaryConfig(configs, '');
+            expect(selection).not.toBeNull();
+            expect(selection?.config.configPath).toBe('packages/sub/tsconfig.json');
+            expect(selection?.ignoredConfigs).toContain('tsconfig.json');
         });
     });
 
@@ -185,6 +206,36 @@ describe('Import Resolver Unit Tests', () => {
             const outcome = resolveSpecifier('./nonexistent', 'src/main.ts', baseCtx);
             expect(outcome).toEqual({ type: 'not_found' });
         });
+
+        it('resolves ./util.ts to util.ts when it exists (explicit extension)', () => {
+            const ctx = {
+                allFiles: new Set(['src/main.ts', 'src/util.ts']),
+                wrapperPrefix: '',
+                config: null,
+            };
+            const outcome = resolveSpecifier('./util.ts', 'src/main.ts', ctx);
+            expect(outcome).toEqual({ type: 'resolved', target: 'src/util.ts' });
+        });
+
+        it('resolves absolute /components/x relative to project root', () => {
+            const ctx = {
+                allFiles: new Set(['app/page.tsx', 'components/x.tsx']),
+                wrapperPrefix: '',
+                config: null,
+            };
+            const outcome = resolveSpecifier('/components/x', 'app/page.tsx', ctx);
+            expect(outcome).toEqual({ type: 'resolved', target: 'components/x.tsx' });
+        });
+
+        it('resolves absolute /components/x through wrapper prefix', () => {
+            const ctx = {
+                allFiles: new Set(['myproj/app/page.tsx', 'myproj/components/x.tsx']),
+                wrapperPrefix: 'myproj',
+                config: null,
+            };
+            const outcome = resolveSpecifier('/components/x', 'myproj/app/page.tsx', ctx);
+            expect(outcome).toEqual({ type: 'resolved', target: 'myproj/components/x.tsx' });
+        });
     });
 
     describe('4. Precedence rules and narrowed ambiguity (Amendment 5)', () => {
@@ -272,6 +323,36 @@ describe('Import Resolver Unit Tests', () => {
                 type: 'ambiguous',
                 candidates: ['Utils.ts', 'utils.ts'],
             });
+        });
+
+        it('./util.tsx when util.tsx absent but util.ts present => not_found (no cross-extension fallback)', () => {
+            const ctx = {
+                allFiles: new Set(['src/main.ts', 'src/util.ts']),
+                wrapperPrefix: '',
+                config: null,
+            };
+            const outcome = resolveSpecifier('./util.tsx', 'src/main.ts', ctx);
+            expect(outcome).toEqual({ type: 'not_found' });
+        });
+
+        it('./util.js with util.jsx present but no .ts/.tsx/.d.ts/.js => not_found (no .jsx fallback from .js)', () => {
+            const ctx = {
+                allFiles: new Set(['src/main.ts', 'src/util.jsx']),
+                wrapperPrefix: '',
+                config: null,
+            };
+            const outcome = resolveSpecifier('./util.js', 'src/main.ts', ctx);
+            expect(outcome).toEqual({ type: 'not_found' });
+        });
+
+        it('./button.tsx with button/index.tsx present but button.tsx absent => not_found (no index fallback for explicit extension)', () => {
+            const ctx = {
+                allFiles: new Set(['src/main.ts', 'src/button/index.tsx']),
+                wrapperPrefix: '',
+                config: null,
+            };
+            const outcome = resolveSpecifier('./button.tsx', 'src/main.ts', ctx);
+            expect(outcome).toEqual({ type: 'not_found' });
         });
     });
 
