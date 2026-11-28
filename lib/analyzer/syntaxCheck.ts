@@ -63,8 +63,8 @@ export async function checkSyntaxByLanguage(code: string, language: string): Pro
     else if (normalized === 'go' || normalized === 'golang') langKey = 'go';
     else if (normalized === 'java') langKey = 'java';
     else if (normalized === 'cpp') langKey = 'cpp';
-    else if (normalized === 'rust') langKey = 'rust';
-    else if (normalized === 'c#') langKey = 'c_sharp';
+    else if (normalized === 'rust' || normalized === 'rs') langKey = 'rust';
+    else if (normalized === 'c#' || normalized === 'cs') langKey = 'c_sharp';
     
     if (!langKey) {
         return { status: 'unknown', syntaxErrors: [] };

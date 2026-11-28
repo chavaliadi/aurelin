@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
             allIssues,
         } = body;
 
-        if (!projectScore || !categoryScores) {
+        if (projectScore === undefined || projectScore === null || !categoryScores) {
             return NextResponse.json({ error: 'Missing scan data.' }, { status: 400 });
         }
 

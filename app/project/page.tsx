@@ -312,16 +312,16 @@ export default function ProjectPage() {
                             </div>
 
                             {previousScan && (
-                                <div className="glass-card correctness-card" style={{ borderLeft: '4px solid', borderLeftColor: deltaScore && deltaScore >= 0 ? '#22c55e' : '#ef4444', paddingLeft: '20px' }}>
+                                <div className="glass-card correctness-card" style={{ borderLeft: '4px solid', borderLeftColor: deltaScore !== null && deltaScore >= 0 ? '#22c55e' : '#ef4444', paddingLeft: '20px' }}>
                                     <h2 className="card-title">📉 Scan Evolution Delta</h2>
                                     <div className="correctness-status-line">
                                         <span className="correctness-pill" style={{
-                                            background: deltaScore && deltaScore >= 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                                            color: deltaScore && deltaScore >= 0 ? '#22c55e' : '#ef4444',
-                                            borderColor: deltaScore && deltaScore >= 0 ? '#22c55e40' : '#ef444440',
+                                            background: deltaScore !== null && deltaScore >= 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                            color: deltaScore !== null && deltaScore >= 0 ? '#22c55e' : '#ef4444',
+                                            borderColor: deltaScore !== null && deltaScore >= 0 ? '#22c55e40' : '#ef444440',
                                             border: '1px solid',
                                         }}>
-                                            {deltaScore && deltaScore >= 0 ? `+${deltaScore}` : deltaScore} pts
+                                            {deltaScore !== null && deltaScore >= 0 ? `+${deltaScore}` : deltaScore} pts
                                         </span>
                                         <span className="correctness-subtext" style={{ fontSize: '11px' }}>
                                             vs scan {timeAgo(previousScan.createdAt)}
@@ -330,14 +330,14 @@ export default function ProjectPage() {
                                     <div style={{ marginTop: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <span style={{ color: 'var(--text-muted)' }}>Files changed:</span>
-                                            <strong style={{ color: deltaFiles && deltaFiles >= 0 ? '#22c55e' : '#ef4444' }}>
-                                                {deltaFiles && deltaFiles >= 0 ? `+${deltaFiles}` : deltaFiles}
+                                            <strong style={{ color: deltaFiles !== null && deltaFiles >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                {deltaFiles !== null && deltaFiles >= 0 ? `+${deltaFiles}` : deltaFiles}
                                             </strong>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <span style={{ color: 'var(--text-muted)' }}>Lines of code:</span>
-                                            <strong style={{ color: deltaLines && deltaLines >= 0 ? '#22c55e' : '#ef4444' }}>
-                                                {deltaLines && deltaLines >= 0 ? `+${deltaLines}` : deltaLines}
+                                            <strong style={{ color: deltaLines !== null && deltaLines >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                {deltaLines !== null && deltaLines >= 0 ? `+${deltaLines}` : deltaLines}
                                             </strong>
                                         </div>
                                     </div>

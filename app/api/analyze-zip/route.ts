@@ -14,7 +14,7 @@ const ai = new GroqProvider();
 
 const DEEP_EXTENSIONS = new Set(['.js', '.ts', '.jsx', '.tsx']);
 const QUICK_EXTENSIONS = new Set([
-    '.py', '.java', '.go', '.cpp', '.c', '.cs', '.rs', '.rb',
+    '.py', '.java', '.go', '.cpp', '.cc', '.cxx', '.c', '.cs', '.rs', '.rb',
     '.swift', '.kt', '.php', '.scala', '.r', '.m',
 ]);
 const EXCLUDED_PATHS = ['node_modules', '.next', 'dist', 'build', '.git', 'vendor', '__pycache__'];
@@ -164,6 +164,9 @@ function getLang(filename: string): 'js' | 'ts' {
 
 function getLanguageId(filename: string): string {
     const ext = filename.toLowerCase().split('.').pop() ?? '';
+    // Do NOT add cross-language aliases here (removed: 'c' -> 'cpp', 'cs' -> 'java', 'rs' -> 'go', 'rb' -> 'py').
+    // Languages without a dedicated module must fall through to the language-agnostic path in textAnalyzer.ts,
+    // because running another language's rules produces findings that are simply wrong.
     const extMap: Record<string, string> = {
         'js': 'js',
         'ts': 'ts',
@@ -173,10 +176,6 @@ function getLanguageId(filename: string): string {
         'cpp': 'cpp',
         'cc': 'cpp',
         'cxx': 'cpp',
-        'c': 'cpp', // group C with C++
-        'cs': 'java', // C# uses similar patterns to Java
-        'rs': 'go',   // Rust error patterns similar to Go
-        'rb': 'py',   // Ruby similar to Python
     };
     return extMap[ext] || ext;
 }
