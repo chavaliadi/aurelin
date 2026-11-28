@@ -181,11 +181,13 @@ export class GroqProvider implements AIProvider {
         codeSnippet: string,
         language: string
     ): Promise<AIFixResponse | null> {
+        let raw = '';
+
         try {
             const completion = await groq.chat.completions.create({
                 model: GROQ_MODEL,
                 temperature: 0.1,   // lower temp = more deterministic JSON
-                max_tokens: 600,
+                max_tokens: 1536,
                 messages: [
                     {
                         role: 'system',
@@ -198,7 +200,14 @@ export class GroqProvider implements AIProvider {
                 ],
             });
 
-            const raw = completion.choices[0]?.message?.content ?? '';
+            const choice = completion.choices[0];
+            raw = choice?.message?.content ?? '';
+
+            if (choice?.finish_reason === 'length') {
+                console.error(`Groq suggestFix truncated: finish_reason=length, ${raw.length} chars received`);
+                return null;
+            }
+
             // Strip any accidental markdown fences before parsing
             const cleaned = raw.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
             const parsed = JSON.parse(cleaned) as AIFixResponse;
@@ -211,7 +220,10 @@ export class GroqProvider implements AIProvider {
 
             return parsed;
         } catch (err) {
-            console.error('Groq suggestFix error:', err);
+            console.error(
+                `Groq suggestFix error (rawLength=${raw.length}, preview=${JSON.stringify(raw.slice(0, 200))}):`,
+                err
+            );
             return null;
         }
     }
@@ -237,6 +249,8 @@ export class GroqProvider implements AIProvider {
                 { rank: 1, title: 'Break Circular Dependencies', impact: 'High' as const, description: 'Untangle cyclical dependency references.' }
             ]
         };
+
+        let raw = '';
 
         try {
             const prompt = `You are a Principal Software Architect reviewing a code repository.
@@ -294,14 +308,21 @@ Your response MUST fit this exact JSON format:
             const completion = await groq.chat.completions.create({
                 model: GROQ_MODEL,
                 temperature: 0.2,
-                max_tokens: 800,
+                max_tokens: 2048,
                 messages: [
                     { role: 'system', content: 'Respond ONLY in valid JSON. No markdown. No extra text.' },
                     { role: 'user', content: prompt }
                 ]
             });
 
-            const raw = completion.choices[0]?.message?.content ?? '';
+            const choice = completion.choices[0];
+            raw = choice?.message?.content ?? '';
+
+            if (choice?.finish_reason === 'length') {
+                console.error(`Groq response truncated: finish_reason=length, ${raw.length} chars received`);
+                return fallback;
+            }
+
             const cleaned = raw.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
             const parsed = JSON.parse(cleaned);
 
@@ -311,7 +332,10 @@ Your response MUST fit this exact JSON format:
                 topFixes: parsed.topFixes || fallback.topFixes
             };
         } catch (err) {
-            console.error('Groq explainProject error:', err);
+            console.error(
+                `Groq explainProject error (rawLength=${raw.length}, preview=${JSON.stringify(raw.slice(0, 200))}):`,
+                err
+            );
             return fallback;
         }
     }
