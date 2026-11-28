@@ -14,18 +14,19 @@ function Provider({ children,
     const createUser = useMutation(api.user.CreateNewUser);
     const [useDetail, setUserDetail] = useState<{ name: string; email: string; token: number } | undefined>();
 
-    const CreateAndGetUser = async () => {
-        if (isAuthenticated) {
-            const result = await createUser({});
-            setUserDetail(result);
-        }
-    };
-
     useEffect(() => {
-        if (isAuthenticated) {
-            CreateAndGetUser();
-        }
-    }, [isAuthenticated]);
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        (async () => {
+            const result = await createUser({});
+            if (!cancelled) {
+                setUserDetail(result);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, createUser]);
 
     return (
         <UserDetailContext.Provider value={{ useDetail, setUserDetail }}>

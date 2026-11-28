@@ -279,7 +279,7 @@ function detectASTSecuritySmells(ast: t.File, code: string): Issue[] {
     
     // 1. eval() and dangerouslySetInnerHTML usage
     traverse(ast, {
-        CallExpression(path: any) {
+        CallExpression(path: { node: t.CallExpression }) {
             const node = path.node;
             if (t.isIdentifier(node.callee) && node.callee.name === 'eval') {
                 issues.push({
@@ -294,7 +294,7 @@ function detectASTSecuritySmells(ast: t.File, code: string): Issue[] {
                 });
             }
         },
-        JSXAttribute(path: any) {
+        JSXAttribute(path: { node: t.JSXAttribute }) {
             const node = path.node;
             if (node.name.name === 'dangerouslySetInnerHTML') {
                 issues.push({
@@ -356,7 +356,7 @@ function detectNextjsSmells(ast: t.File, code: string, filePath: string): Issue[
     
     if (isClient) {
         traverse(ast, {
-            ImportDeclaration(path: any) {
+            ImportDeclaration(path: { node: t.ImportDeclaration }) {
                 const source = path.node.source.value;
                 if (
                     source.includes('@prisma/client') || 
@@ -443,9 +443,9 @@ export function computeMetrics(ast: t.File, code: string, filePath: string = 'fi
             }
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        CallExpression(path: any) {
+        CallExpression(path: { node: t.CallExpression }) {
             const callee = path.node.callee;
-            if (t.isImport(callee) || callee?.type === 'Import') {
+            if (t.isImport(callee) || (callee as { type?: string })?.type === 'Import') {
                 const arg = path.node.arguments[0];
                 if (arg) {
                     if (t.isStringLiteral(arg)) {

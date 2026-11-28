@@ -217,7 +217,7 @@ export class GroqProvider implements AIProvider {
     }
 
     async explainProject(
-        metrics: any,
+        metrics: MetricsSummary,
         score: number,
         clusters: { folder: string; issueCount: number; categories: string[]; affectedFiles: string[] }[],
         cycles: string[][],

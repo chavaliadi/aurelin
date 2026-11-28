@@ -8,8 +8,7 @@ import { ArrowLeft, TrendingUp, ShieldAlert, Code } from 'lucide-react';
 import ScoreGauge from '@/components/analyzer/ScoreGauge';
 import ThemeToggle from '@/components/ThemeToggle';
 import Mermaid from '@/components/analyzer/Mermaid';
-import type { Grade } from '@/lib/analyzer/types';
-import type { FileResult } from '@/lib/analyzer/types';
+import type { Grade, FileResult, Issue, RecognizedPattern } from '@/lib/analyzer/types';
 
 type ScanData = {
     scanId: string;
@@ -79,11 +78,11 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
     const architectureInsights = scan.architectureInsights ? JSON.parse(scan.architectureInsights) : null;
     const rootCauseClusters = scan.rootCauseClusters ? JSON.parse(scan.rootCauseClusters) : [];
     const topFixes = scan.topFixes ? JSON.parse(scan.topFixes) : [];
-    const detectedPatterns = scan.detectedPatterns ? JSON.parse(scan.detectedPatterns) : [];
-    const allIssues = scan.allIssues ? JSON.parse(scan.allIssues) : [];
+    const detectedPatterns: RecognizedPattern[] = scan.detectedPatterns ? JSON.parse(scan.detectedPatterns) : [];
+    const allIssues: { filePath: string; issue: Issue }[] = scan.allIssues ? JSON.parse(scan.allIssues) : [];
 
-    const securitySmells = allIssues.filter((i: any) => i.issue.category === 'security');
-    const frameworkSmells = allIssues.filter((i: any) => i.issue.category === 'framework');
+    const securitySmells = allIssues.filter((i) => i.issue.category === 'security');
+    const frameworkSmells = allIssues.filter((i) => i.issue.category === 'framework');
 
     const scanDate = new Date(scan.createdAt).toLocaleDateString('en-US', {
         year: 'numeric', month: 'short', day: 'numeric'
@@ -162,7 +161,7 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
                     <p className="section-subtitle">Deterministic static rules flagged these critical code smells in the shared ZIP.</p>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginTop: '16px' }}>
-                        {securitySmells.map((item: any, idx: number) => (
+                        {securitySmells.map((item, idx: number) => (
                             <div key={`sec-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -174,7 +173,7 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
                             </div>
                         ))}
 
-                        {frameworkSmells.map((item: any, idx: number) => (
+                        {frameworkSmells.map((item, idx: number) => (
                             <div key={`fw-${idx}`} style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(59, 130, 246, 0.05)', borderLeft: '4px solid #3b82f6', borderRadius: '4px' }}>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -307,7 +306,7 @@ export default function ScanSharePage({ params }: { params: Promise<{ id: string
                     <p className="section-subtitle">Aurelin resolved project layout and imports to detect architectural patterns with confidence scores.</p>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                        {detectedPatterns.map((pattern: any, idx: number) => (
+                        {detectedPatterns.map((pattern, idx: number) => (
                             <div key={idx} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card-hover)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong style={{ fontSize: '15px' }}>{pattern.name}</strong>

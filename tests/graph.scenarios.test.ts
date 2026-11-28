@@ -49,7 +49,7 @@ async function runScenarioPipeline(scenario: GraphScenario): Promise<{
     const isDeep = DEEP_EXTENSIONS.has(ext);
 
     if (isDeep) {
-      const { ast } = parseCode(code, getLang(filename));
+      const { ast, syntaxErrors } = parseCode(code, getLang(filename));
       const { summary, issues, imports } = computeMetrics(ast, code, filePath);
 
       fileResults.push({
@@ -57,6 +57,8 @@ async function runScenarioPipeline(scenario: GraphScenario): Promise<{
         filePath,
         score: 100,
         grade: 'Excellent',
+        correctnessStatus: syntaxErrors.length > 0 ? 'fail' : 'pass',
+        syntaxErrorCount: syntaxErrors.length,
         issueCount: issues.length,
         metrics: summary,
         mode: 'deep',
@@ -74,6 +76,8 @@ async function runScenarioPipeline(scenario: GraphScenario): Promise<{
         filePath,
         score: quickResult.score,
         grade: quickResult.grade,
+        correctnessStatus: 'unknown',
+        syntaxErrorCount: 0,
         issueCount: quickResult.issues.length,
         metrics: quickResult.metrics,
         mode: 'quick',

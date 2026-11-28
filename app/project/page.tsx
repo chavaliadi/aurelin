@@ -390,7 +390,7 @@ export default function ProjectPage() {
                     <h2 className="card-title">🎯 Prioritized Refactoring Plan</h2>
                     <p className="section-subtitle">Ranked issues and recommended steps generated dynamically by structural models.</p>
                     <div className="top-fixes-list">
-                        {project.topFixes.map((fix: any) => (
+                        {project.topFixes.map((fix) => (
                             <div key={fix.rank} className={`top-fix-item impact-${fix.impact.toLowerCase()}`}>
                                 <div className="top-fix-rank">#{fix.rank}</div>
                                 <div className="top-fix-body">
@@ -529,7 +529,7 @@ export default function ProjectPage() {
                         Here are the areas that would give you the biggest improvement
                     </h2>
                     <div className="improvements-list">
-                        {project.topImprovements.map((imp: any, i: number) => (
+                        {project.topImprovements.map((imp, i: number) => (
                             <div key={i} className="improvement-item">
                                 <div className="improvement-rank">#{i + 1}</div>
                                 <div className="improvement-body">
@@ -555,7 +555,7 @@ export default function ProjectPage() {
                     <p className="section-subtitle">Aurelin resolved project layout and imports to detect architectural patterns with confidence scores.</p>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                        {project.detectedPatterns.map((pattern: any, idx: number) => (
+                        {project.detectedPatterns.map((pattern, idx: number) => (
                             <div key={idx} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card-hover)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong style={{ fontSize: '15px' }}>{pattern.name}</strong>
@@ -652,7 +652,7 @@ export default function ProjectPage() {
                     <h2 className="card-title">📁 Directory Issue Clusters</h2>
                     <p className="section-subtitle">Groups of related issues identified within specific subdirectories.</p>
                     <div className="clusters-grid">
-                        {project.rootCauseClusters.map((cluster: any, idx: number) => (
+                        {project.rootCauseClusters.map((cluster, idx: number) => (
                             <div key={idx} className="cluster-card-item">
                                 <div className="cluster-header">
                                     <h3 className="cluster-folder">{cluster.folder}</h3>

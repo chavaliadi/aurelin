@@ -8,7 +8,7 @@ function detectBareExcept(code: string): Issue[] {
     code.split('\n').forEach((line, idx) => {
         if (bareExceptPattern.test(line)) {
             issues.push({
-                type: 'bare_except' as any,
+                type: 'bare_except',
                 category: 'language',
                 severity: 'high',
                 priority: 'quick-win',  // ✅ FIXED
@@ -31,7 +31,7 @@ function detectMutableDefaultArg(code: string): Issue[] {
             const params = match[1];
             if (/=\s*[\[\{\(]/.test(params)) {
                 issues.push({
-                    type: 'mutable_default_arg' as any,
+                    type: 'mutable_default_arg',
                     category: 'language',
                     severity: 'high',
                     priority: 'quick-win',  // ✅ FIXED
@@ -52,7 +52,7 @@ function detectNoneComparison(code: string): Issue[] {
     code.split('\n').forEach((line, idx) => {
         if (noneComparisonPattern.test(line)) {
             issues.push({
-                type: 'none_comparison' as any,
+                type: 'none_comparison',
                 category: 'language',
                 severity: 'medium',
                 priority: 'quick-win',
@@ -78,7 +78,7 @@ function detectLongFunction(code: string): Issue[] {
                 const funcLength = i - funcStartLine - 1;
                 if (funcLength > 60) {
                     issues.push({
-                        type: 'long_function' as any,
+                        type: 'long_function',
                         category: 'language',
                         severity: 'low',
                         priority: 'quick-win',  // ✅ FIXED
@@ -97,7 +97,7 @@ function detectLongFunction(code: string): Issue[] {
         const funcLength = lines.length - funcStartLine - 1;
         if (funcLength > 60) {
             issues.push({
-                type: 'long_function' as any,
+                type: 'long_function',
                 category: 'language',
                 severity: 'low',
                 priority: 'quick-win',  // ✅ FIXED

@@ -29,28 +29,28 @@ export async function getLanguageModule(languageId: string): Promise<LanguageMod
     }
 
     try {
-        let module: LanguageModule;
+        let langModule: LanguageModule;
 
         switch (languageId) {
             case 'py':
                 // Dynamically import Python module
-                module = (await import('./python')).pythonModule;
+                langModule = (await import('./python')).pythonModule;
                 break;
             case 'go':
-                module = (await import('./go')).goModule;
+                langModule = (await import('./go')).goModule;
                 break;
             case 'java':
-                module = (await import('./java')).javaModule;
+                langModule = (await import('./java')).javaModule;
                 break;
             case 'cpp':
-                module = (await import('./cpp')).cppModule;
+                langModule = (await import('./cpp')).cppModule;
                 break;
             default:
                 return null;
         }
 
-        languageModules.set(languageId, module);
-        return module;
+        languageModules.set(languageId, langModule);
+        return langModule;
     } catch {
         return null;
     }
@@ -61,9 +61,9 @@ export async function getLanguageModule(languageId: string): Promise<LanguageMod
  * Returns empty array if language module not found
  */
 export async function detectLanguagePatterns(code: string, languageId: string): Promise<Issue[]> {
-    const module = await getLanguageModule(languageId);
-    if (!module) return [];
-    return module.detectPatterns(code);
+    const langModule = await getLanguageModule(languageId);
+    if (!langModule) return [];
+    return langModule.detectPatterns(code);
 }
 
 /**
@@ -71,7 +71,7 @@ export async function detectLanguagePatterns(code: string, languageId: string): 
  * Returns empty array if language module not found
  */
 export async function getLanguagePromptHints(issues: Issue[], languageId: string): Promise<string[]> {
-    const module = await getLanguageModule(languageId);
-    if (!module) return [];
-    return module.getPromptHints(issues);
+    const langModule = await getLanguageModule(languageId);
+    if (!langModule) return [];
+    return langModule.getPromptHints(issues);
 }

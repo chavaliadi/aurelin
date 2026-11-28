@@ -81,7 +81,7 @@ async function runScenario(scenario: GraphScenario): Promise<ProjectResult> {
     }
   }
 
-  return aggregateResults(fileResults, '', allIssues, []);
+  return aggregateResults(fileResults, '', allIssues, [], scenario.config);
 }
 
 function extractPreExistingFields(project: ProjectResult): Record<string, unknown> {

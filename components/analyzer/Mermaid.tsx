@@ -42,7 +42,7 @@ export default function Mermaid({ chart }: MermaidProps) {
                 if (isMounted) {
                     setSvg(renderedSvg);
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Mermaid Render Error:", error);
                 if (isMounted) {
                     setErr("Failed to render graph. Try cleaning circular components.");

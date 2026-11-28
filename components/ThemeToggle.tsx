@@ -1,23 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+
+const THEME_EVENT = 'cv-theme-change';
+
+function subscribeTheme(callback: () => void) {
+    window.addEventListener('storage', callback);
+    window.addEventListener(THEME_EVENT, callback);
+    return () => {
+        window.removeEventListener('storage', callback);
+        window.removeEventListener(THEME_EVENT, callback);
+    };
+}
+
+function getThemeSnapshot(): 'dark' | 'light' {
+    const saved = localStorage.getItem('cv_theme');
+    return saved === 'light' ? 'light' : 'dark';
+}
+
+function getServerThemeSnapshot(): 'dark' | 'light' {
+    return 'dark';
+}
 
 export default function ThemeToggle() {
-    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
 
-    // Initialize from localStorage on mount
     useEffect(() => {
-        const saved = localStorage.getItem('cv_theme') as 'dark' | 'light' | null;
-        const initial = saved ?? 'dark';
-        setTheme(initial);
-        document.documentElement.setAttribute('data-theme', initial === 'light' ? 'light' : '');
-    }, []);
+        document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+    }, [theme]);
 
     function toggle() {
         const next = theme === 'dark' ? 'light' : 'dark';
-        setTheme(next);
         localStorage.setItem('cv_theme', next);
-        document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '');
+        window.dispatchEvent(new Event(THEME_EVENT));
     }
 
     return (

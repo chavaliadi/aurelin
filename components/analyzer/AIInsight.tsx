@@ -33,20 +33,20 @@ function parseExplanation(raw: string): {
 
 export default function AIInsight({ explanation, model }: AIInsightProps) {
     const { summary, actions, effort } = parseExplanation(explanation);
-    const [displayed, setDisplayed] = useState('');
-    const idxRef = useRef(0);
+    const [progress, setProgress] = useState<{ text: string; len: number }>({ text: '', len: 0 });
 
     // Typewriter for summary
     useEffect(() => {
-        idxRef.current = 0;
-        setDisplayed('');
+        let idx = 0;
         const interval = setInterval(() => {
-            idxRef.current++;
-            setDisplayed(summary.slice(0, idxRef.current));
-            if (idxRef.current >= summary.length) clearInterval(interval);
+            idx++;
+            setProgress({ text: summary, len: idx });
+            if (idx >= summary.length) clearInterval(interval);
         }, 18);
         return () => clearInterval(interval);
     }, [summary]);
+
+    const displayed = progress.text === summary ? summary.slice(0, progress.len) : '';
 
     const effortColor =
         effort.toLowerCase().startsWith('low') ? '#22c55e' :

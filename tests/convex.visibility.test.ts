@@ -47,11 +47,11 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       expect(result?.projectScore).toBe(85);
 
       // Must NOT include sensitive/detailed fields
-      expect(result?.allIssues).toBeUndefined();
-      expect(result?.architectureInsights).toBeUndefined();
-      expect(result?.rootCauseClusters).toBeUndefined();
-      expect((result as Record<string, unknown>)?.fileResults).toBeUndefined();
-      expect(result?.topFixes).toBeUndefined();
+      expect(result).not.toHaveProperty('allIssues');
+      expect(result).not.toHaveProperty('architectureInsights');
+      expect(result).not.toHaveProperty('rootCauseClusters');
+      expect(result).not.toHaveProperty('fileResults');
+      expect(result).not.toHaveProperty('topFixes');
     });
 
     it('non-owner (different user) fetch of a scan with summary visibility must NOT include allIssues, architectureInsights, rootCauseClusters, fileResults, topFixes', async () => {
@@ -63,11 +63,11 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
       const result = await userB.query(api.scans.getScanById, { scanId: 'scan_summary_2' });
       expect(result).not.toBeNull();
 
-      expect(result?.allIssues).toBeUndefined();
-      expect(result?.architectureInsights).toBeUndefined();
-      expect(result?.rootCauseClusters).toBeUndefined();
-      expect((result as Record<string, unknown>)?.fileResults).toBeUndefined();
-      expect(result?.topFixes).toBeUndefined();
+      expect(result).not.toHaveProperty('allIssues');
+      expect(result).not.toHaveProperty('architectureInsights');
+      expect(result).not.toHaveProperty('rootCauseClusters');
+      expect(result).not.toHaveProperty('fileResults');
+      expect(result).not.toHaveProperty('topFixes');
     });
 
     it('owner fetch of a scan with summary visibility returns full data', async () => {
@@ -77,11 +77,14 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
 
       const result = await userA.query(api.scans.getScanById, { scanId: 'scan_owner_summary' });
       expect(result).not.toBeNull();
-      expect(result?.allIssues).toBeDefined();
-      expect(result?.architectureInsights).toBeDefined();
-      expect(result?.rootCauseClusters).toBeDefined();
-      expect((result as Record<string, unknown>)?.fileResults).toBeDefined();
-      expect(result?.topFixes).toBeDefined();
+      if (!result || !('allIssues' in result)) {
+        throw new Error('Expected full scan fields to be present');
+      }
+      expect(result.allIssues).toBeDefined();
+      expect(result.architectureInsights).toBeDefined();
+      expect(result.rootCauseClusters).toBeDefined();
+      expect(result.fileResults).toBeDefined();
+      expect(result.topFixes).toBeDefined();
     });
 
     it('non-owner fetch of a scan with full visibility returns full data', async () => {
@@ -91,11 +94,14 @@ describe('Phase 1B: Share Visibility and Scan IDs (G10, G13)', () => {
 
       const result = await t.query(api.scans.getScanById, { scanId: 'scan_full' });
       expect(result).not.toBeNull();
-      expect(result?.allIssues).toBeDefined();
-      expect(result?.architectureInsights).toBeDefined();
-      expect(result?.rootCauseClusters).toBeDefined();
-      expect((result as Record<string, unknown>)?.fileResults).toBeDefined();
-      expect(result?.topFixes).toBeDefined();
+      if (!result || !('allIssues' in result)) {
+        throw new Error('Expected full scan fields to be present');
+      }
+      expect(result.allIssues).toBeDefined();
+      expect(result.architectureInsights).toBeDefined();
+      expect(result.rootCauseClusters).toBeDefined();
+      expect(result.fileResults).toBeDefined();
+      expect(result.topFixes).toBeDefined();
     });
   });
 

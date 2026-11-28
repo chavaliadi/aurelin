@@ -99,7 +99,7 @@ export default function SuggestFixModal({
                 {/* Issue context */}
                 <div className="sfm-issue-context">
                     <span className="sfm-issue-type">{issue.type.replace('_', ' ')}</span>
-                    {issue.name && <span className="sfm-issue-fn">"{issue.name}"</span>}
+                    {issue.name && <span className="sfm-issue-fn">&quot;{issue.name}&quot;</span>}
                     <p className="sfm-issue-msg">{issue.message}</p>
                 </div>
 

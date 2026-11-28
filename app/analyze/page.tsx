@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, UserButton } from '@clerk/nextjs';
 import type { AnalysisResult, Grade } from '@/lib/analyzer/types';
@@ -11,32 +11,63 @@ import AIInsight from '@/components/analyzer/AIInsight';
 import ThemeToggle from '@/components/ThemeToggle';
 import { ArrowLeft, RefreshCw, BarChart2, LogIn } from 'lucide-react';
 
+type StoredAnalysis = {
+    result: AnalysisResult;
+    language: string;
+    code: string;
+    languageMode: 'deep' | 'quick';
+};
+
+let cachedRaw: string | null = null;
+let cachedParsed: StoredAnalysis | null = null;
+
+function subscribeSession() {
+    return () => {};
+}
+
+function getServerAnalysisSnapshot(): StoredAnalysis | null {
+    return null;
+}
+
+function getAnalysisSnapshot(): StoredAnalysis | null {
+    try {
+        const raw = sessionStorage.getItem('cv_result');
+        if (!raw) {
+            cachedRaw = null;
+            cachedParsed = null;
+            return null;
+        }
+        if (raw === cachedRaw && cachedParsed) {
+            return cachedParsed;
+        }
+        const mode = sessionStorage.getItem('cv_language_mode');
+        cachedRaw = raw;
+        cachedParsed = {
+            result: JSON.parse(raw) as AnalysisResult,
+            language: sessionStorage.getItem('cv_lang') ?? 'ts',
+            code: sessionStorage.getItem('cv_code') ?? '',
+            languageMode: (mode === 'deep' || mode === 'quick') ? mode : 'deep',
+        };
+        return cachedParsed;
+    } catch {
+        cachedRaw = null;
+        cachedParsed = null;
+        return null;
+    }
+}
+
 export default function AnalyzePage() {
-    const [result, setResult] = useState<AnalysisResult | null>(null);
-    const [language, setLanguage] = useState('ts');
-    const [code, setCode] = useState('');
-    const [languageMode, setLanguageMode] = useState<'deep' | 'quick'>('deep');
+    const stored = useSyncExternalStore(subscribeSession, getAnalysisSnapshot, getServerAnalysisSnapshot);
     const router = useRouter();
     const { user, isLoaded } = useUser();
 
     useEffect(() => {
-        const raw = sessionStorage.getItem('cv_result');
-        if (!raw) {
-            router.replace('/');
-            return;
-        }
-        try {
-            setResult(JSON.parse(raw) as AnalysisResult);
-            setLanguage(sessionStorage.getItem('cv_lang') ?? 'ts');
-            setCode(sessionStorage.getItem('cv_code') ?? '');
-            const mode = sessionStorage.getItem('cv_language_mode');
-            setLanguageMode((mode === 'deep' || mode === 'quick') ? mode : 'deep');
-        } catch {
+        if (stored === null) {
             router.replace('/');
         }
-    }, [router]);
+    }, [stored, router]);
 
-    if (!result) {
+    if (!stored) {
         return (
             <div className="analyze-loading">
                 <div className="loading-ring" />
@@ -44,6 +75,8 @@ export default function AnalyzePage() {
             </div>
         );
     }
+
+    const { result, language, code, languageMode } = stored;
 
     const highCount = result.issues.filter((i) => i.severity === 'high').length;
     const mediumCount = result.issues.filter((i) => i.severity === 'medium').length;
